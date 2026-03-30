@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarrierCheck — Weryfikacja Przewoźników</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181b22;
+    --border: #1e2330;
+    --accent: #00e5a0;
+    --accent-dim: rgba(0,229,160,0.12);
+    --accent-glow: rgba(0,229,160,0.25);
+    --warn: #ffaa00;
+    --warn-dim: rgba(255,170,0,0.12);
+    --danger: #ff4466;
+    --danger-dim: rgba(255,68,102,0.12);
+    --text: #e8eaf0;
+    --text-muted: #5a6075;
+    --text-dim: #8890a8;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orb */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,229,160,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 60px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span {
+    color: var(--accent);
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 48px;
+  }
+
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-label::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    color: var(--text-dim);
+    font-size: 16px;
+    font-weight: 400;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* Module tabs */
+  .modules {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .module-tab {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .module-tab:hover {
+    border-color: var(--text-muted);
+    color: var(--text-dim);
+  }
+
+  .module-tab.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .module-tab.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Search card */
+  .search-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .search-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    font-family: var(--mono);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .input-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .input-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .country-nip-wrap {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--surface2);
+  }
+
+  .country-nip-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .country-select {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px 12px;
+    cursor: pointer;
+    outline: none;
+    min-width: 70px;
+  }
+
+  .country-select option {
+    background: var(--surface);
+  }
+
+  .divider-v {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  .nip-input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    padding: 14px 16px;
+    flex: 1;
+    outline: none;
+    letter-spacing: 2px;
+    width: 100%;
+  }
+
+  .nip-input::placeholder {
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-size: 14px;
+  }
+
+  .btn-check {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+  }
+
+  .btn-check:hover {
+    background: #00ffb3;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+  }
+
+  .btn-check:active {
+    transform: translateY(0);
+  }
+
+  .btn-check:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result */
+  .result-card {
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .result-header.valid {
+    background: var(--accent-dim);
+    border-bottom: 1px solid rgba(0,229,160,0.2);
+  }
+
+  .result-header.invalid {
+    background: var(--danger-dim);
+    border-bottom: 1px solid rgba(255,68,102,0.2);
+  }
+
+  .result-header.warn {
+    background: var(--warn-dim);
+    border-bottom: 1px solid rgba(255,170,0,0.2);
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .status-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .valid .status-icon { background: var(--accent); color: #000; }
+  .invalid .status-icon { background: var(--danger); color: #fff; }
+  .warn .status-icon { background: var(--warn); color: #000; }
+
+  .valid .status-badge { color: var(--accent); }
+  .invalid .status-badge { color: var(--danger); }
+  .warn .status-badge { color: var(--warn); }
+
+  .result-timestamp {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .result-body {
+    background: var(--surface);
+    padding: 28px;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .result-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .field-value {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .field-value.empty {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 12px;
+    font-family: var(--sans);
+  }
+
+  .field-value.highlight {
+    color: var(--accent);
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+
+  .result-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .raw-section {
+    margin-top: 4px;
+  }
+
+  .raw-toggle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .raw-toggle:hover {
+    color: var(--text-dim);
+    border-color: var(--text-muted);
+  }
+
+  .raw-data {
+    margin-top: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    overflow-x: auto;
+    display: none;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .raw-data.visible { display: block; }
+
+  /* Error state */
+  .error-card {
+    background: var(--danger-dim);
+    border: 1px solid rgba(255,68,102,0.25);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease;
+  }
+
+  .error-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+  .error-text { font-size: 14px; color: var(--danger); font-weight: 500; line-height: 1.5; }
+  .error-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+
+  /* Info footer */
+  .info-strip {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .info-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* History */
+  .history-section {
+    margin-top: 40px;
+  }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .history-item:hover {
+    border-color: var(--text-muted);
+    background: var(--surface2);
+  }
+
+  .history-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history-status.valid { background: var(--accent); }
+  .history-status.invalid { background: var(--danger); }
+  .history-status.warn { background: var(--warn); }
+
+  .history-vat {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .history-name {
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .history-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .input-row { flex-direction: column; }
+    .btn-check { width: 100%; justify-content: center; }
+    .history-name { display: none; }
+    .result-grid { grid-template-columns: 1fr; }
+  }
+
+  /* KREPTD section */
+  .kreptd-card {
+    margin-top: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kreptd-header {
+    background: rgba(88, 80, 200, 0.15);
+    border-bottom: 1px solid rgba(88, 80, 200, 0.3);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .kreptd-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .kreptd-logo {
+    width: 28px;
+    height: 28px;
+    background: rgba(88, 80, 200, 0.35);
+    border: 1px solid rgba(88, 80, 200, 0.5);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .kreptd-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #a09aff;
+    letter-spacing: 0.5px;
+  }
+
+  .kreptd-sublabel {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .kreptd-status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .kreptd-status-pill.ok {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .kreptd-status-pill.warn {
+    background: var(--warn-dim);
+    color: var(--warn);
+    border: 1px solid rgba(255,170,0,0.3);
+  }
+
+  .kreptd-status-pill.error {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(255,68,102,0.3);
+  }
+
+  .kreptd-body {
+    background: var(--surface);
+    padding: 28px;
+  }
+
+  .kreptd-section {
+    margin-bottom: 24px;
+  }
+
+  .kreptd-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .kreptd-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .kreptd-section-icon {
+    font-size: 12px;
+  }
+
+  .kreptd-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+
+  .kreptd-check-row:hover {
+    border-color: var(--text-muted);
+  }
+
+  .check-indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .check-indicator.pass { background: var(--accent); color: #000; }
+  .check-indicator.fail { background: var(--danger); color: #fff; }
+  .check-indicator.info { background: rgba(160,154,255,0.3); color: #a09aff; }
+
+  .check-content {
+    flex: 1;
+  }
+
+  .check-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .check-detail {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .check-detail strong {
+    color: var(--text);
+  }
+
+  .kreptd-entity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .kreptd-entity {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    border-left: 2px solid rgba(160,154,255,0.4);
+  }
+
+  .kreptd-loading {
+    padding: 32px;
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .kreptd-loading-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .kreptd-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(160,154,255,0.2);
+    border-top-color: #a09aff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .kreptd-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .kreptd-note a {
+    color: #a09aff;
+    text-decoration: none;
+  }
+
+  .kreptd-note a:hover {
+    text-decoration: underline;
+  }
+
+  .validity-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .validity-tag.valid { background: var(--accent-dim); color: var(--accent); }
+  .validity-tag.expired { background: var(--danger-dim); color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🚚</div>
+      <div class="logo-text">Carrier<span>Check</span></div>
+    </div>
+    <div class="badge">v0.1 · BETA</div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-label">Platforma weryfikacji przewoźników</div>
+    <h1>Sprawdź przewoźnika<br>w <em>kilka sekund</em></h1>
+    <p class="hero-sub">Weryfikacja NIP/VAT EU, licencji, polis ubezpieczeniowych — wszystko w jednym miejscu.</p>
+  </div>
+
+  <div class="modules">
+    <button class="module-tab active" onclick="switchModule('vies')">
+      <span class="dot"></span> VIES / NIP EU
+    </button>
+    <button class="module-tab disabled" title="Wkrótce">
+      <span class="dot"></span> Licencje transportowe
+    </button>
+    <button class="module-tab disabled" title="Wkrótce">
+      <span class="dot"></span> Polisy OC/OCP
+    </button>
+    <button class="module-tab disabled" title="Wkrótce">
+      <span class="dot"></span> Biała lista VAT PL
+    </button>
+  </div>
+
+  <div class="search-card">
+    <div class="card-title">// Weryfikacja VAT — VIES (UE)</div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label" for="nipInput">Numer VAT UE</label>
+        <div class="country-nip-wrap">
+          <select class="country-select" id="countrySelect">
+            <option value="PL">PL</option>
+            <option value="DE">DE</option>
+            <option value="CZ">CZ</option>
+            <option value="SK">SK</option>
+            <option value="HU">HU</option>
+            <option value="RO">RO</option>
+            <option value="LT">LT</option>
+            <option value="LV">LV</option>
+            <option value="EE">EE</option>
+            <option value="FR">FR</option>
+            <option value="AT">AT</option>
+            <option value="BE">BE</option>
+            <option value="NL">NL</option>
+            <option value="SE">SE</option>
+            <option value="FI">FI</option>
+            <option value="DK">DK</option>
+            <option value="IT">IT</option>
+            <option value="ES">ES</option>
+            <option value="PT">PT</option>
+            <option value="BG">BG</option>
+            <option value="HR">HR</option>
+            <option value="SI">SI</option>
+            <option value="GR">GR</option>
+            <option value="IE">IE</option>
+            <option value="LU">LU</option>
+            <option value="MT">MT</option>
+            <option value="CY">CY</option>
+          </select>
+          <div class="divider-v"></div>
+          <input
+            type="text"
+            id="nipInput"
+            class="nip-input"
+            placeholder="np. 5261040828"
+            maxlength="20"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+      </div>
+      <button class="btn-check" id="checkBtn" onclick="checkVies()">
+        <span id="btnIcon">→</span>
+        <span id="btnText">Sprawdź</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="resultContainer"></div>
+  <div id="kreptdContainer"></div>
+
+  <div class="info-strip">
+    <div class="info-item"><span class="info-dot"></span> Dane z systemu VIES (Komisja Europejska)</div>
+    <div class="info-item"><span class="info-dot"></span> KREPTD via dane.gov.pl (GITD)</div>
+    <div class="info-item"><span class="info-dot"></span> Weryfikacja w czasie rzeczywistym</div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="section-title">Historia zapytań</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+  const history = [];
+
+  const nipInput = document.getElementById('nipInput');
+  nipInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkVies();
+  });
+
+  nipInput.addEventListener('input', () => {
+    nipInput.value = nipInput.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  });
+
+  function setLoading(loading) {
+    const btn = document.getElementById('checkBtn');
+    const icon = document.getElementById('btnIcon');
+    const text = document.getElementById('btnText');
+    btn.disabled = loading;
+    if (loading) {
+      icon.innerHTML = '<div class="spinner"></div>';
+      text.textContent = 'Sprawdzam...';
+    } else {
+      icon.textContent = '→';
+      text.textContent = 'Sprawdź';
+    }
+  }
+
+  async function checkVies() {
+    const countryCode = document.getElementById('countrySelect').value;
+    const vatNumber = nipInput.value.trim();
+
+    if (!vatNumber) {
+      showError('Wprowadź numer VAT', 'Pole nie może być puste.');
+      return;
+    }
+
+    if (vatNumber.length < 6) {
+      showError('Numer za krótki', 'Podaj pełny numer VAT (bez prefixu kraju).');
+      return;
+    }
+
+    setLoading(true);
+    document.getElementById('resultContainer').innerHTML = '';
+    document.getElementById('kreptdContainer').innerHTML = '';
+
+    // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
+    const BACKEND = 'https://kacper2.pythonanywhere.com';
+
+    try {
+      const url = `${BACKEND}/vies?country=${countryCode}&vat=${encodeURIComponent(vatNumber)}`;
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errBody}`);
+      }
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Obsługa obu formatów odpowiedzi (VIES i vatcomply)
+      if (data.isValid !== undefined) {
+        renderResult(countryCode, vatNumber, data);
+      } else {
+        renderResultFallback(countryCode, vatNumber, data);
+      }
+      addHistory(countryCode, vatNumber, data);
+      if (countryCode === 'PL') checkKreptd(vatNumber);
+
+    } catch (err) {
+      showError(
+        'Błąd połączenia z VIES',
+        `Nie udało się połączyć z serwerem weryfikacji. Spróbuj ponownie za chwilę.\n\nSzczegóły: ${err.message}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResult(country, vat, data) {
+    const isValid = data.isValid === true || data.valid === true;
+    const statusClass = isValid ? 'valid' : 'invalid';
+    const statusText = isValid ? 'Czynny podatnik VAT UE' : 'Niezarejestrowany / nieaktywny';
+    const statusIcon = isValid ? '✓' : '✗';
+
+    const name = data.name || data.traderName || '—';
+    const address = data.address || data.traderAddress || '—';
+    const requestDate = data.requestDate || new Date().toISOString().split('T')[0];
+    const consultationNumber = data.consultationNumber || data.requestIdentifier || '—';
+
+    document.getElementById('resultContainer').innerHTML = `
+      <div class="result-card">
+        <div class="result-header ${statusClass}">
+          <div class="status-badge">
+            <div class="status-icon">${statusIcon}</div>
+            ${statusText}
+          </div>
+          <div class="result-timestamp">${requestDate}</div>
+        </div>
+        <div class="result-body">
+          <div class="result-grid">
+            <div class="result-field">
+              <span class="field-label">Numer VAT</span>
+              <span class="field-value highlight">${country}${vat}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Kraj</span>
+              <span class="field-value">${getCountryName(country)}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Nazwa firmy</span>
+              <span class="field-value ${name === '---' || name === '—' ? 'empty' : ''}">${name !== '---' && name !== '—' ? name : 'Brak danych (zastrzeżone)'}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Adres</span>
+              <span class="field-value ${address === '---' || address === '—' ? 'empty' : ''}">${address !== '---' && address !== '—' ? address.replace(/\n/g, '<br>') : 'Brak danych (zastrzeżone)'}</span>
+            </div>
+          </div>
+          <div class="result-divider"></div>
+          <div class="result-grid">
+            <div class="result-field">
+              <span class="field-label">Data weryfikacji</span>
+              <span class="field-value">${requestDate}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Nr konsultacji VIES</span>
+              <span class="field-value">${consultationNumber}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Źródło danych</span>
+              <span class="field-value">VIES · ec.europa.eu</span>
+            </div>
+          </div>
+          <div class="raw-section">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderResultFallback(country, vat, data) {
+    // vatcomply.com format
+    const isValid = data.valid === true;
+    const statusClass = isValid ? 'valid' : 'invalid';
+    const statusText = isValid ? 'Czynny podatnik VAT UE' : 'Niezarejestrowany / nieaktywny';
+    const statusIcon = isValid ? '✓' : '✗';
+
+    const name = data.name || '—';
+    const address = data.address || '—';
+    const country_name = data.country?.name || getCountryName(country);
+
+    document.getElementById('resultContainer').innerHTML = `
+      <div class="result-card">
+        <div class="result-header ${statusClass}">
+          <div class="status-badge">
+            <div class="status-icon">${statusIcon}</div>
+            ${statusText}
+          </div>
+          <div class="result-timestamp">${new Date().toLocaleDateString('pl-PL')}</div>
+        </div>
+        <div class="result-body">
+          <div class="result-grid">
+            <div class="result-field">
+              <span class="field-label">Numer VAT</span>
+              <span class="field-value highlight">${country}${vat}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Kraj</span>
+              <span class="field-value">${country_name}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Nazwa firmy</span>
+              <span class="field-value ${name === '—' ? 'empty' : ''}">${name !== '—' ? name : 'Brak danych'}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Adres</span>
+              <span class="field-value ${address === '—' ? 'empty' : ''}">${address !== '—' ? address : 'Brak danych'}</span>
+            </div>
+          </div>
+          <div class="result-divider"></div>
+          <div class="result-grid">
+            <div class="result-field">
+              <span class="field-label">Data weryfikacji</span>
+              <span class="field-value">${new Date().toLocaleString('pl-PL')}</span>
+            </div>
+            <div class="result-field">
+              <span class="field-label">Źródło danych</span>
+              <span class="field-value">VIES via vatcomply.com</span>
+            </div>
+          </div>
+          <div class="raw-section">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function showError(title, detail) {
+    document.getElementById('resultContainer').innerHTML = `
+      <div class="error-card">
+        <div class="error-icon">⚠</div>
+        <div>
+          <div class="error-text">${title}</div>
+          <div class="error-sub">${detail}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function toggleRaw(btn) {
+    const pre = btn.nextElementSibling;
+    pre.classList.toggle('visible');
+    btn.textContent = pre.classList.contains('visible') ? 'Ukryj dane surowe' : 'Pokaż dane surowe (JSON)';
+  }
+
+  function addHistory(country, vat, data) {
+    const isValid = data.isValid === true || data.valid === true;
+    const name = data.name || data.traderName || data.name || '';
+    history.unshift({ country, vat, isValid, name, time: new Date() });
+    if (history.length > 10) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const section = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+    if (history.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    list.innerHTML = history.map((h, i) => `
+      <div class="history-item" onclick="recheck('${h.country}', '${h.vat}')">
+        <div class="history-status ${h.isValid ? 'valid' : 'invalid'}"></div>
+        <div class="history-vat">${h.country}${h.vat}</div>
+        <div class="history-name">${h.name || '—'}</div>
+        <div class="history-time">${h.time.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}</div>
+      </div>
+    `).join('');
+  }
+
+  function recheck(country, vat) {
+    document.getElementById('countrySelect').value = country;
+    nipInput.value = vat;
+    checkVies();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function switchModule(mod) {
+    document.querySelectorAll('.module-tab').forEach(t => t.classList.remove('active'));
+    event.target.closest('.module-tab').classList.add('active');
+  }
+
+  // ── KREPTD ─────────────────────────────────────────────────────────────
+  async function checkKreptd(nip) {
+    const container = document.getElementById('kreptdContainer');
+
+    // Only for Polish NIP (10 digits)
+    if (!/^\d{10}$/.test(nip)) {
+      container.innerHTML = '';
+      return;
+    }
+
+    // Show loading shell
+    container.innerHTML = `
+      <div class="kreptd-card">
+        <div class="kreptd-header">
+          <div class="kreptd-title-row">
+            <div class="kreptd-logo">🚛</div>
+            <div>
+              <div class="kreptd-label">KREPTD</div>
+              <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
+            </div>
+          </div>
+          <div class="kreptd-status-pill warn">Sprawdzam…</div>
+        </div>
+        <div class="kreptd-loading">
+          <div class="kreptd-loading-inner">
+            <div class="kreptd-spinner"></div>
+            Pobieranie danych z KREPTD / dane.gov.pl…
+          </div>
+        </div>
+      </div>`;
+
+    // ── Backend CarrierCheck (PythonAnywhere) ────────────────────────────────
+    async function fetchKreptdData(nip) {
+      const resp = await fetch(`https://kacper2.pythonanywhere.com/kreptd?nip=${nip}`, {
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!resp.ok) throw new Error(`Błąd serwera HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Nieznany błąd backendu');
+      return json.records || [];
+    }
+
+    try {
+      const records = await fetchKreptdData(nip);
+      renderKreptd(nip, records);
+    } catch (err) {
+      renderKreptdOffline(nip, err.message);
+    }
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    // Obsługuje YYYY-MM-DD lub DD-MM-YYYY
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      const [y, m, d] = str.split('T')[0].split('-');
+      return `${d}.${m}.${y}`;
+    }
+    return str;
+  }
+
+  function isExpired(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return !isNaN(d) && d < new Date();
+  }
+
+  function renderKreptd(nip, records) {
+    const container = document.getElementById('kreptdContainer');
+
+    if (records.length === 0) {
+      container.innerHTML = `
+        <div class="kreptd-card">
+          <div class="kreptd-header">
+            <div class="kreptd-title-row">
+              <div class="kreptd-logo">🚛</div>
+              <div>
+                <div class="kreptd-label">KREPTD</div>
+                <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
+              </div>
+            </div>
+            <div class="kreptd-status-pill warn">Brak wpisu</div>
+          </div>
+          <div class="kreptd-body">
+            <div class="kreptd-check-row">
+              <div class="check-indicator fail">✗</div>
+              <div class="check-content">
+                <div class="check-name">Podmiot nieznaleziony w KREPTD</div>
+                <div class="check-detail">NIP <strong>${nip}</strong> nie figuruje w rejestrze przedsiębiorców transportu drogowego. Sprawdź ręcznie na <a href="https://kreptd.gitd.gov.pl" target="_blank" style="color:#a09aff">kreptd.gitd.gov.pl</a> lub poniżej.</div>
+              </div>
+            </div>
+            <div class="kreptd-note">
+              ⚠ Dane pobrane z <a href="https://dane.gov.pl" target="_blank">dane.gov.pl</a> (GITD).
+              Możliwe opóźnienie synchronizacji — zweryfikuj bezpośrednio na <a href="https://kreptd.gitd.gov.pl" target="_blank">kreptd.gitd.gov.pl</a>.
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Grupuj dane z rekordów
+    const r = records[0];
+    const hasLicence = !!(r.numer_licencji_wspolnotowej || r.nr_licencji || r.licencja_numer);
+    const hasPermit = !!(r.numer_zezwolenia || r.zezwolenie_numer);
+    const hasManager = !!(r.zarzadzajacy || r.imie_zarzadzajacego || r.nazwisko_zarzadzajacego);
+
+    const licNo = r.numer_licencji_wspolnotowej || r.nr_licencji || r.licencja_numer || '—';
+    const licFrom = formatDate(r.data_waznosci_od_licencji || r.data_wydania_licencji || r.data_od);
+    const licTo = formatDate(r.data_waznosci_do_licencji || r.data_waznosci_licencji || r.data_do);
+    const licExpired = isExpired(r.data_waznosci_do_licencji || r.data_waznosci_licencji || r.data_do);
+    const vehicles = r.liczba_pojazdow || r.ilosc_pojazdow || '—';
+    const firmName = r.nazwa_firmy || r.nazwa_podmiotu || r.firma || '—';
+    const zezNo = r.numer_zezwolenia || r.zezwolenie_numer || '—';
+    const managerName = [r.imie_zarzadzajacego, r.nazwisko_zarzadzajacego].filter(Boolean).join(' ') || r.zarzadzajacy || '—';
+    const certNo = r.numer_certyfikatu_kompetencji || r.certyfikat_numer || '—';
+
+    // Inne podmioty z tym samym zarządzającym
+    const allEntities = records.map(rec => {
+      const fn = rec.nazwa_firmy || rec.nazwa_podmiotu || rec.firma || '';
+      const nipRec = rec.nip || '';
+      return fn ? `${nipRec ? nipRec + ', ' : ''}${fn}` : null;
+    }).filter(Boolean);
+
+    const overallOk = !licExpired && (hasLicence || hasPermit);
+    const statusClass = overallOk ? 'ok' : 'warn';
+    const statusText = overallOk ? 'Weryfikacja pomyślna' : (licExpired ? 'Licencja wygasła' : 'Sprawdź ręcznie');
+
+    const entitiesHtml = allEntities.length > 1 ? `
+      <div class="kreptd-entity-list">
+        ${allEntities.map(e => `<div class="kreptd-entity">— ${e}</div>`).join('')}
+      </div>` : '';
+
+    container.innerHTML = `
+      <div class="kreptd-card">
+        <div class="kreptd-header">
+          <div class="kreptd-title-row">
+            <div class="kreptd-logo">🚛</div>
+            <div>
+              <div class="kreptd-label">KREPTD</div>
+              <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
+            </div>
+          </div>
+          <div class="kreptd-status-pill ${statusClass}">${statusText}</div>
+        </div>
+        <div class="kreptd-body">
+
+          ${firmName !== '—' ? `
+          <div class="kreptd-section">
+            <div class="kreptd-section-title"><span class="kreptd-section-icon">🏢</span> Podmiot</div>
+            <div class="kreptd-check-row">
+              <div class="check-indicator info">i</div>
+              <div class="check-content">
+                <div class="check-name">${firmName}</div>
+                <div class="check-detail">NIP: <strong>${nip}</strong></div>
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div class="kreptd-section">
+            <div class="kreptd-section-title"><span class="kreptd-section-icon">🇵🇱</span> Zezwolenie krajowe</div>
+            <div class="kreptd-check-row">
+              <div class="check-indicator ${hasPermit || hasLicence ? 'pass' : 'fail'}">${hasPermit || hasLicence ? '✓' : '✗'}</div>
+              <div class="check-content">
+                <div class="check-name">Zezwolenie / Licencja krajowa</div>
+                <div class="check-detail">
+                  Nr: <strong>${hasPermit ? zezNo : licNo}</strong><br>
+                  Liczba pojazdów: <strong>${vehicles}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="kreptd-section">
+            <div class="kreptd-section-title"><span class="kreptd-section-icon">🇪🇺</span> Licencja wspólnotowa</div>
+            <div class="kreptd-check-row">
+              <div class="check-indicator ${hasLicence ? 'pass' : 'fail'}">${hasLicence ? '✓' : '✗'}</div>
+              <div class="check-content">
+                <div class="check-name">
+                  Licencja wspólnotowa nr ${licNo}
+                  ${licTo !== '—' ? `<span class="validity-tag ${licExpired ? 'expired' : 'valid'}">${licExpired ? 'WYGASŁA' : 'AKTYWNA'}</span>` : ''}
+                </div>
+                <div class="check-detail">
+                  Ważność od: <strong>${licFrom}</strong> · do: <strong>${licTo}</strong><br>
+                  Liczba pojazdów: <strong>${vehicles}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${hasManager ? `
+          <div class="kreptd-section">
+            <div class="kreptd-section-title"><span class="kreptd-section-icon">👤</span> Zarządzający transportem</div>
+            <div class="kreptd-check-row">
+              <div class="check-indicator pass">✓</div>
+              <div class="check-content">
+                <div class="check-name">${managerName}</div>
+                <div class="check-detail">Nr certyfikatu: <strong>${certNo}</strong>${entitiesHtml ? '<br>Powiązane podmioty:' : ''}</div>
+                ${entitiesHtml}
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div class="kreptd-note">
+            Dane pobrane z <a href="https://dane.gov.pl" target="_blank">dane.gov.pl</a> (GITD — Główny Inspektorat Transportu Drogowego).
+            Zweryfikuj szczegółowo na <a href="https://kreptd.gitd.gov.pl" target="_blank">kreptd.gitd.gov.pl</a>.
+          </div>
+
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe KREPTD (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(records, null, 2)}</pre>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderKreptdOffline(nip, errMsg) {
+    const container = document.getElementById('kreptdContainer');
+    container.innerHTML = `
+      <div class="kreptd-card">
+        <div class="kreptd-header">
+          <div class="kreptd-title-row">
+            <div class="kreptd-logo">🚛</div>
+            <div>
+              <div class="kreptd-label">KREPTD</div>
+              <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
+            </div>
+          </div>
+          <div class="kreptd-status-pill error">Niedostępne</div>
+        </div>
+        <div class="kreptd-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">!</div>
+            <div class="check-content">
+              <div class="check-name">Nie udało się pobrać danych KREPTD</div>
+              <div class="check-detail">
+                Próbowano 3 serwisy pośredniczące (allorigins, corsproxy.io, cors-anywhere) — wszystkie tymczasowo niedostępne.<br>
+                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onclick="checkKreptd('${nip}')" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid var(--accent);
+              background:var(--accent-dim);color:var(--accent);
+              cursor:pointer;transition:all .2s
+            ">↻ Spróbuj ponownie</button>
+            <a href="https://kreptd.gitd.gov.pl/" target="_blank" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid var(--border);
+              background:var(--surface2);color:var(--text-dim);
+              cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px
+            ">↗ Sprawdź ręcznie na kreptd.gitd.gov.pl</a>
+          </div>
+          <div class="kreptd-note" style="margin-top:14px">
+            Możesz również sprawdzić bezpośrednio: <a href="https://kreptd.gitd.gov.pl" target="_blank">kreptd.gitd.gov.pl</a>
+          </div>
+        </div>
+      </div>`;
+  }
+  // ── /KREPTD ─────────────────────────────────────────────────────────────
+
+  function getCountryName(code) {
+    const names = {
+      PL:'Polska', DE:'Niemcy', CZ:'Czechy', SK:'Słowacja', HU:'Węgry',
+      RO:'Rumunia', LT:'Litwa', LV:'Łotwa', EE:'Estonia', FR:'Francja',
+      AT:'Austria', BE:'Belgia', NL:'Holandia', SE:'Szwecja', FI:'Finlandia',
+      DK:'Dania', IT:'Włochy', ES:'Hiszpania', PT:'Portugalia', BG:'Bułgaria',
+      HR:'Chorwacja', SI:'Słowenia', GR:'Grecja', IE:'Irlandia', LU:'Luksemburg',
+      MT:'Malta', CY:'Cypr'
+    };
+    return names[code] || code;
+  }
+</script>
+
+</body>
+</html>
