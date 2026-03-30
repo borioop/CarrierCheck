@@ -27,12 +27,18 @@ def vies():
         except Exception as e2:
             return jsonify({'error': str(e2)}), 500
 
-# ── KREPTD proxy ──────────────────────────────────────────────────────────────
 @app.route('/kreptd')
 def kreptd():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
         return jsonify({'success': False, 'error': 'Nieprawidłowy NIP'}), 400
+
+    headers = {
+        'Accept': 'application/json, text/plain, */*',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
+        'Referer': 'https://dane.gov.pl/',
+        'Accept-Language': 'pl-PL,pl;q=0.9',
+    }
 
     all_records = []
     errors = []
@@ -44,8 +50,14 @@ def kreptd():
     for resource_id in resources:
         try:
             sql = f'SELECT * FROM "{resource_id}" WHERE nip = \'{nip}\' LIMIT 20'
-            url = 'https://dane.gov.pl/api/3/action/datastore_search_sql'
-            resp = requests.get(url, params={'sql': sql}, headers={'Accept': 'application/json'}, timeout=15)
+            resp = requests.get(
+                'https://dane.gov.pl/api/3/action/datastore_search_sql',
+                params={'sql': sql},
+                headers=headers,
+                timeout=20
+            )
+            # Loguj co faktycznie dostajemy
+            print(f"[KREPTD] {resource_id} status={resp.status_code} body={resp.text[:300]}")
             resp.raise_for_status()
             data = resp.json()
             records = data.get('result', {}).get('records', [])
@@ -53,27 +65,9 @@ def kreptd():
         except Exception as e:
             errors.append(f'{resource_id}: {str(e)}')
 
-    if not all_records:
-        for resource_id in resources:
-            try:
-                resp = requests.get(
-                    'https://dane.gov.pl/api/3/action/datastore_search',
-                    params={'resource_id': resource_id, 'q': nip, 'limit': 20},
-                    headers={'Accept': 'application/json'}, timeout=15
-                )
-                resp.raise_for_status()
-                records = resp.json().get('result', {}).get('records', [])
-                records = [r for r in records if str(r.get('nip', '')).replace('-','').replace(' ','') == nip]
-                all_records.extend(records)
-            except Exception as e:
-                errors.append(f'fallback {resource_id}: {str(e)}')
-
     if all_records:
         return jsonify({'success': True, 'records': all_records})
     elif errors:
-        return jsonify({'success': False, 'error': '; '.join(errors), 'records': []}), 500
+        return jsonify({'success': False, 'error': '; '.join(errors), 'records': [], 'debug': 'check render logs'}), 500
     else:
         return jsonify({'success': True, 'records': []})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
