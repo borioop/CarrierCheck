@@ -1055,7 +1055,7 @@
     document.getElementById('kreptdContainer').innerHTML = '';
 
     // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
-    const BACKEND = 'https://kacper2.pythonanywhere.com';
+    const BACKEND = 'https://carriercheck-backend.onrender.com';
 
     try {
       const url = `${BACKEND}/vies?country=${countryCode}&vat=${encodeURIComponent(vatNumber)}`;
@@ -1297,7 +1297,7 @@
 
     // ── Backend CarrierCheck (PythonAnywhere) ────────────────────────────────
     async function fetchKreptdData(nip) {
-      const resp = await fetch(`https://kacper2.pythonanywhere.com/kreptd?nip=${nip}`, {
+      const resp = await fetch(`https://carriercheck-backend.onrender.com/kreptd?nip=${nip}`, {
         signal: AbortSignal.timeout(15000)
       });
       if (!resp.ok) throw new Error(`Błąd serwera HTTP ${resp.status}`);
