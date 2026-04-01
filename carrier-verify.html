@@ -1093,6 +1093,196 @@
 
   .bl-note a { color: var(--warn); text-decoration: none; }
   .bl-note a:hover { text-decoration: underline; }
+
+  /* ── GUS REGON ──────────────────────────────────────────────────────────── */
+  .gus-card {
+    margin-top: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gus-header {
+    background: rgba(30, 120, 220, 0.12);
+    border-bottom: 1px solid rgba(30, 120, 220, 0.28);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .gus-header.ok-header {
+    background: rgba(0, 229, 160, 0.08);
+    border-bottom: 1px solid rgba(0, 229, 160, 0.2);
+  }
+
+  .gus-header.err-header {
+    background: rgba(255, 68, 102, 0.08);
+    border-bottom: 1px solid rgba(255, 68, 102, 0.2);
+  }
+
+  .gus-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .gus-logo {
+    width: 28px;
+    height: 28px;
+    background: rgba(30, 120, 220, 0.2);
+    border: 1px solid rgba(30, 120, 220, 0.4);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .gus-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a9eff;
+    letter-spacing: 0.5px;
+  }
+
+  .gus-sublabel {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .gus-status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .gus-status-pill.ok   { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .gus-status-pill.warn { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,170,0,0.3); }
+  .gus-status-pill.error{ background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,68,102,0.3); }
+  .gus-status-pill.info { background: rgba(30,120,220,0.12); color: #4a9eff; border: 1px solid rgba(30,120,220,0.3); }
+
+  .gus-body {
+    background: var(--surface);
+    padding: 28px;
+  }
+
+  .gus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .gus-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .gus-field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .gus-field-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .gus-field-value.accent { color: var(--accent); font-size: 15px; }
+  .gus-field-value.blue   { color: #4a9eff; }
+  .gus-field-value.empty  { color: var(--text-muted); font-style: italic; font-size: 11px; font-family: var(--sans); }
+
+  .gus-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gus-loading {
+    padding: 32px;
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .gus-loading-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .gus-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(30,120,220,0.2);
+    border-top-color: #4a9eff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .gus-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .gus-note a { color: #4a9eff; text-decoration: none; }
+  .gus-note a:hover { text-decoration: underline; }
+
+  .gus-pkd-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .gus-pkd-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    background: rgba(30,120,220,0.1);
+    border: 1px solid rgba(30,120,220,0.25);
+    border-radius: 4px;
+    color: #4a9eff;
+  }
 </style>
 </head>
 <body>
@@ -1186,11 +1376,13 @@
   <div id="resultContainer"></div>
   <div id="kreptdContainer"></div>
   <div id="bialalistaContainer"></div>
+  <div id="gusContainer"></div>
 
   <div class="info-strip">
     <div class="info-item"><span class="info-dot"></span> Dane z systemu VIES (Komisja Europejska)</div>
     <div class="info-item"><span class="info-dot"></span> KREPTD via dane.gov.pl (GITD)</div>
     <div class="info-item"><span class="info-dot"></span> Biała Lista VAT via wl-api.mf.gov.pl (MF)</div>
+    <div class="info-item"><span class="info-dot"></span> GUS REGON via BIR1 (stat.gov.pl)</div>
     <div class="info-item"><span class="info-dot"></span> Weryfikacja w czasie rzeczywistym</div>
   </div>
 
@@ -1245,6 +1437,7 @@
     document.getElementById('resultContainer').innerHTML = '';
     document.getElementById('kreptdContainer').innerHTML = '';
     document.getElementById('bialalistaContainer').innerHTML = '';
+    document.getElementById('gusContainer').innerHTML = '';
 
     // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
     const BACKEND = 'https://carriercheck-backend.onrender.com';
@@ -1271,6 +1464,7 @@
       if (countryCode === 'PL') {
         checkKreptd(vatNumber);
         checkBialaLista(vatNumber);
+        checkGus(vatNumber);
       }
 
     } catch (err) {
@@ -1945,6 +2139,239 @@
     };
     return names[code] || code;
   }
+
+  // ── GUS REGON ──────────────────────────────────────────────────────────────
+  async function checkGus(nip) {
+    const container = document.getElementById('gusContainer');
+    if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+      <div class="gus-card">
+        <div class="gus-header">
+          <div class="gus-title-row">
+            <div class="gus-logo">🏛</div>
+            <div>
+              <div class="gus-label">GUS REGON</div>
+              <div class="gus-sublabel">Główny Urząd Statystyczny — Baza Internetowa Regon</div>
+            </div>
+          </div>
+          <div class="gus-status-pill warn">Sprawdzam…</div>
+        </div>
+        <div class="gus-loading">
+          <div class="gus-loading-inner">
+            <div class="gus-spinner"></div>
+            Pobieranie danych z BIR1 (stat.gov.pl)…
+          </div>
+        </div>
+      </div>`;
+
+    const BACKEND = 'https://carriercheck-backend.onrender.com';
+    try {
+      const resp = await fetch(`${BACKEND}/gus?nip=${nip}`, { signal: AbortSignal.timeout(25000) });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Nieznany błąd');
+      renderGus(nip, json);
+    } catch (err) {
+      renderGusError(nip, err.message);
+    }
+  }
+
+  function renderGus(nip, json) {
+    const container = document.getElementById('gusContainer');
+
+    if (!json.found || !json.data) {
+      container.innerHTML = `
+        <div class="gus-card">
+          <div class="gus-header err-header">
+            <div class="gus-title-row">
+              <div class="gus-logo">🏛</div>
+              <div>
+                <div class="gus-label">GUS REGON</div>
+                <div class="gus-sublabel">Główny Urząd Statystyczny — Baza Internetowa Regon</div>
+              </div>
+            </div>
+            <div class="gus-status-pill warn">Nie znaleziono</div>
+          </div>
+          <div class="gus-body">
+            <div class="kreptd-check-row">
+              <div class="check-indicator fail">✗</div>
+              <div class="check-content">
+                <div class="check-name">NIP ${nip} nie figuruje w rejestrze REGON</div>
+                <div class="check-detail">Podmiot nie jest zarejestrowany w bazie GUS lub dane są niedostępne.</div>
+              </div>
+            </div>
+            <div class="gus-note">
+              Sprawdź bezpośrednio: <a href="https://wyszukiwarkaregon.stat.gov.pl/appBIR/index.aspx" target="_blank">wyszukiwarkaregon.stat.gov.pl</a>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const d = json.data;
+
+    // Mapowanie nazw pól GUS BIR1 → czytelne etykiety
+    const nazwa     = d.Nazwa || d.NazwaPelna || '—';
+    const regon     = d.Regon || json.regon || '—';
+    const nip_val   = d.Nip  || nip;
+    const krs       = d.NumerWRejestrzeEwidencji || d.Krs || '—';
+    const forma     = d.SzczegolnaFormaPrawna || d.FormaPrawna || '—';
+    const datRegist = d.DataPowstania || d.DataRozpoczeciaDzialalnosci || '—';
+    const datWpisu  = d.DataWpisuDoRejestruEwidencji || '—';
+    const datSkresl = d.DataSkresleniaPodmiotuZRejestruEwidencji || '';
+    const ulica     = d.Ulica || d.AdresUlica || '';
+    const nrBudynku = d.NumerNieruchomosci || d.AdresNumerNieruchomosci || '';
+    const nrLokalu  = d.NumerLokalu || d.AdresNumerLokalu || '';
+    const miasto    = d.Miejscowosc || d.AdresMiejscowosc || '';
+    const kodPoczt  = d.KodPocztowy || d.AdresKodPocztowy || '';
+    const woj       = d.Wojewodztwo || d.AdresWojewodztwo || '';
+    const pkdGlowne = d.PkdPodstawowy || d.Pkd || '';
+    const pkdNazwa  = d.PkdNazwaPodstawowej || '';
+    const zatrudn   = d.LiczbaOsob || '';
+    const statusDzial = datSkresl ? 'Wyrejestrowany' : 'Aktywny';
+    const isActive    = !datSkresl;
+
+    const adres = [ulica, nrBudynku, nrLokalu && `/${nrLokalu}`, kodPoczt && `${kodPoczt} ${miasto}`, woj]
+      .filter(Boolean).join(' ').trim() || '—';
+
+    container.innerHTML = `
+      <div class="gus-card">
+        <div class="gus-header ${isActive ? 'ok-header' : 'err-header'}">
+          <div class="gus-title-row">
+            <div class="gus-logo">🏛</div>
+            <div>
+              <div class="gus-label">GUS REGON</div>
+              <div class="gus-sublabel">Główny Urząd Statystyczny — Baza Internetowa Regon</div>
+            </div>
+          </div>
+          <div class="gus-status-pill ${isActive ? 'ok' : 'warn'}">${statusDzial}</div>
+        </div>
+        <div class="gus-body">
+
+          <div class="gus-section-title">🏢 Dane podmiotu</div>
+          <div class="gus-grid">
+            <div class="gus-field" style="grid-column:1/-1">
+              <span class="gus-field-label">Nazwa</span>
+              <span class="gus-field-value accent">${nazwa}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">NIP</span>
+              <span class="gus-field-value blue">${nip_val}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">REGON</span>
+              <span class="gus-field-value">${regon}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">KRS / Nr w rejestrze</span>
+              <span class="gus-field-value ${krs === '—' ? 'empty' : ''}">${krs}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">Forma prawna</span>
+              <span class="gus-field-value ${forma === '—' ? 'empty' : ''}">${forma}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">Data powstania</span>
+              <span class="gus-field-value ${datRegist === '—' ? 'empty' : ''}">${datRegist}</span>
+            </div>
+            <div class="gus-field">
+              <span class="gus-field-label">Data wpisu do rejestru</span>
+              <span class="gus-field-value ${datWpisu === '—' ? 'empty' : ''}">${datWpisu}</span>
+            </div>
+            ${datSkresl ? `
+            <div class="gus-field">
+              <span class="gus-field-label">Data wyrejestrowania</span>
+              <span class="gus-field-value" style="color:var(--danger)">${datSkresl}</span>
+            </div>` : ''}
+            ${adres !== '—' ? `
+            <div class="gus-field" style="grid-column:1/-1">
+              <span class="gus-field-label">Adres siedziby</span>
+              <span class="gus-field-value">${adres}</span>
+            </div>` : ''}
+          </div>
+
+          ${pkdGlowne ? `
+          <div class="gus-section-title">📊 Działalność (PKD)</div>
+          <div class="gus-grid">
+            <div class="gus-field">
+              <span class="gus-field-label">Główny PKD</span>
+              <span class="gus-field-value blue">${pkdGlowne}</span>
+            </div>
+            ${pkdNazwa ? `<div class="gus-field" style="grid-column:1/-1">
+              <span class="gus-field-label">Nazwa PKD</span>
+              <span class="gus-field-value">${pkdNazwa}</span>
+            </div>` : ''}
+          </div>` : ''}
+
+          ${zatrudn ? `
+          <div class="gus-section-title">👥 Zatrudnienie</div>
+          <div class="gus-grid">
+            <div class="gus-field">
+              <span class="gus-field-label">Liczba pracujących</span>
+              <span class="gus-field-value">${zatrudn}</span>
+            </div>
+          </div>` : ''}
+
+          <div class="gus-note" style="margin-top:16px">
+            Źródło: <a href="https://wyszukiwarkaregon.stat.gov.pl/appBIR/index.aspx" target="_blank">wyszukiwarkaregon.stat.gov.pl</a> (GUS BIR1).
+            Pełna wyszukiwarka: <a href="https://wyszukiwarkaregon.stat.gov.pl" target="_blank">stat.gov.pl</a>
+          </div>
+
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe GUS (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json.data, null, 2)}</pre>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderGusError(nip, errMsg) {
+    const container = document.getElementById('gusContainer');
+    container.innerHTML = `
+      <div class="gus-card">
+        <div class="gus-header err-header">
+          <div class="gus-title-row">
+            <div class="gus-logo">🏛</div>
+            <div>
+              <div class="gus-label">GUS REGON</div>
+              <div class="gus-sublabel">Główny Urząd Statystyczny — Baza Internetowa Regon</div>
+            </div>
+          </div>
+          <div class="gus-status-pill error">Niedostępne</div>
+        </div>
+        <div class="gus-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">!</div>
+            <div class="check-content">
+              <div class="check-name">Nie udało się pobrać danych z GUS</div>
+              <div class="check-detail">
+                API GUS BIR1 tymczasowo niedostępne lub wymagany klucz API.<br>
+                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onclick="checkGus('${nip}')" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid #4a9eff;
+              background:rgba(30,120,220,0.12);color:#4a9eff;
+              cursor:pointer;transition:all .2s
+            ">↻ Spróbuj ponownie</button>
+            <a href="https://wyszukiwarkaregon.stat.gov.pl/appBIR/index.aspx" target="_blank" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid var(--border);
+              background:var(--surface2);color:var(--text-dim);
+              cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px
+            ">↗ Sprawdź ręcznie na stat.gov.pl</a>
+          </div>
+          <div class="gus-note" style="margin-top:14px">
+            Możesz również sprawdzić bezpośrednio: <a href="https://wyszukiwarkaregon.stat.gov.pl" target="_blank">wyszukiwarkaregon.stat.gov.pl</a>
+          </div>
+        </div>
+      </div>`;
+  }
+  // ── /GUS REGON ────────────────────────────────────────────────────────────
 </script>
 
 </body>
