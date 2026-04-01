@@ -27,6 +27,7 @@ def vies():
         except Exception as e2:
             return jsonify({'error': str(e2)}), 500
 
+# ── KREPTD proxy ──────────────────────────────────────────────────────────────
 @app.route('/kreptd')
 def kreptd():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
@@ -56,7 +57,6 @@ def kreptd():
                 headers=headers,
                 timeout=20
             )
-            # Loguj co faktycznie dostajemy
             print(f"[KREPTD] {resource_id} status={resp.status_code} body={resp.text[:300]}")
             resp.raise_for_status()
             data = resp.json()
@@ -71,3 +71,52 @@ def kreptd():
         return jsonify({'success': False, 'error': '; '.join(errors), 'records': [], 'debug': 'check render logs'}), 500
     else:
         return jsonify({'success': True, 'records': []})
+
+# ── Biała Lista VAT proxy ─────────────────────────────────────────────────────
+@app.route('/bialalistava')
+def bialalistava():
+    nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
+    if not nip or len(nip) != 10 or not nip.isdigit():
+        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+
+    # Oficjalne API MF – Biała Lista podatników VAT
+    url = f'https://wl-api.mf.gov.pl/api/search/nip/{nip}'
+    params = {
+        'date': __import__('datetime').date.today().isoformat()
+    }
+
+    try:
+        resp = requests.get(url, params=params, timeout=20)
+        print(f"[BIALA_LISTA] NIP={nip} status={resp.status_code} body={resp.text[:400]}")
+
+        if resp.status_code == 404:
+            # Nie znaleziono — podatnik nie figuruje na liście
+            return jsonify({
+                'success': True,
+                'found': False,
+                'nip': nip,
+                'result': None,
+                'source': 'wl-api.mf.gov.pl'
+            })
+
+        resp.raise_for_status()
+        data = resp.json()
+
+        result = data.get('result', {})
+        subject = result.get('subject', None)
+
+        return jsonify({
+            'success': True,
+            'found': subject is not None,
+            'nip': nip,
+            'result': subject,
+            'requestDateTime': result.get('requestDateTime', ''),
+            'source': 'wl-api.mf.gov.pl'
+        })
+
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API MF niedostępne)'}), 504
+    except requests.exceptions.HTTPError as e:
+        return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}'}), 502
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
