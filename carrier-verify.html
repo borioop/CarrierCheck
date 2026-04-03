@@ -384,16 +384,12 @@
   }
 
   .result-header {
-    padding: 18px 28px;
+    padding: 20px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    cursor: pointer;
-    user-select: none;
-    transition: filter 0.15s;
+    gap: 16px;
   }
-  .result-header:hover { filter: brightness(1.12); }
 
   .result-header.valid {
     background: var(--accent-dim);
@@ -410,72 +406,38 @@
     border-bottom: 1px solid rgba(255,170,0,0.2);
   }
 
-  /* left side: logo + labels */
-  .result-title-row {
+  .status-badge {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
-    min-width: 0;
+    font-weight: 700;
+    font-size: 15px;
   }
 
-  .result-logo {
-    width: 28px;
-    height: 28px;
-    background: rgba(0,229,160,0.18);
-    border: 1px solid rgba(0,229,160,0.35);
-    border-radius: 6px;
+  .status-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    flex-shrink: 0;
-  }
-  .result-header.invalid .result-logo {
-    background: rgba(255,68,102,0.18);
-    border-color: rgba(255,68,102,0.35);
-  }
-
-  .result-label {
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.5px;
-  }
-  .result-header.invalid .result-label { color: var(--danger); }
-
-  .result-sublabel {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 0.3px;
-  }
-
-  /* right side: pill + chevron always together */
-  .result-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 16px;
     flex-shrink: 0;
   }
 
-  .result-status-pill {
+  .valid .status-icon { background: var(--accent); color: #000; }
+  .invalid .status-icon { background: var(--danger); color: #fff; }
+  .warn .status-icon { background: var(--warn); color: #000; }
+
+  .valid .status-badge { color: var(--accent); }
+  .invalid .status-badge { color: var(--danger); }
+  .warn .status-badge { color: var(--warn); }
+
+  .result-timestamp {
     font-family: var(--mono);
     font-size: 11px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
+    color: var(--text-muted);
   }
-  .result-status-pill.ok    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
-  .result-status-pill.error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,68,102,0.3); }
-  .result-status-pill.warn  { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,170,0,0.3); }
-
-  /* keep old names for compat but unused now */
-  .status-badge { display: none; }
-  .result-timestamp { display: none; }
 
   .result-body {
     background: var(--surface);
@@ -1574,20 +1536,13 @@
 
     document.getElementById('resultContainer').innerHTML = `
       <div class="result-card">
-        <div class="result-header ${statusClass}" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="result-title-row">
-            <div class="result-logo">${statusIcon}</div>
-            <div>
-              <div class="result-label">VIES</div>
-              <div class="result-sublabel">Komisja Europejska — weryfikacja VAT UE</div>
-            </div>
+        <div class="result-header ${statusClass}">
+          <div class="status-badge">
+            <div class="status-icon">${statusIcon}</div>
+            ${statusText}
           </div>
-          <div class="result-right">
-            <div class="result-status-pill ${isValid ? 'ok' : 'error'}">${statusText}</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
+          <div class="result-timestamp">${requestDate}</div>
         </div>
-        <div class="collapsible-body collapsed">
         <div class="result-body">
           <div class="result-grid">
             <div class="result-field">
@@ -1627,7 +1582,6 @@
             <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
           </div>
         </div>
-        </div>
       </div>
     `;
   }
@@ -1645,20 +1599,13 @@
 
     document.getElementById('resultContainer').innerHTML = `
       <div class="result-card">
-        <div class="result-header ${statusClass}" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="result-title-row">
-            <div class="result-logo">${statusIcon}</div>
-            <div>
-              <div class="result-label">VIES</div>
-              <div class="result-sublabel">Komisja Europejska — weryfikacja VAT UE</div>
-            </div>
+        <div class="result-header ${statusClass}">
+          <div class="status-badge">
+            <div class="status-icon">${statusIcon}</div>
+            ${statusText}
           </div>
-          <div class="result-right">
-            <div class="result-status-pill ${isValid ? 'ok' : 'error'}">${statusText}</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
+          <div class="result-timestamp">${new Date().toLocaleDateString('pl-PL')}</div>
         </div>
-        <div class="collapsible-body collapsed">
         <div class="result-body">
           <div class="result-grid">
             <div class="result-field">
@@ -1693,7 +1640,6 @@
             <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe (JSON)</button>
             <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
           </div>
-        </div>
         </div>
       </div>
     `;
@@ -1774,8 +1720,8 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
-          <div class="result-right"><div class="kreptd-status-pill warn">Sprawdzam…</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="kreptd-status-pill warn">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-loading">
           <div class="kreptd-loading-inner">
@@ -1834,8 +1780,8 @@
                 <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
               </div>
             </div>
-            <div class="result-right"><div class="kreptd-status-pill warn">Brak wpisu</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+            <div class="kreptd-status-pill warn">Brak wpisu</div>
+          <span class="collapse-chevron collapsed">▾</span>
           </div>
           <div class="collapsible-body collapsed"><div class="kreptd-body">
             <div class="kreptd-check-row">
@@ -1896,8 +1842,8 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
-          <div class="result-right"><div class="kreptd-status-pill ${statusClass}">${statusText}</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="kreptd-status-pill ${statusClass}">${statusText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
 
@@ -1982,8 +1928,8 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
-          <div class="result-right"><div class="kreptd-status-pill error">Niedostępne</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="kreptd-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
           <div class="kreptd-check-row">
@@ -2038,8 +1984,8 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
-          <div class="result-right"><div class="bl-status-pill warn">Sprawdzam…</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="bl-status-pill warn">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-loading">
           <div class="bl-loading-inner">
@@ -2078,8 +2024,8 @@
                 <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
               </div>
             </div>
-            <div class="result-right"><div class="bl-status-pill error">Nie znaleziono</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+            <div class="bl-status-pill error">Nie znaleziono</div>
+          <span class="collapse-chevron collapsed">▾</span>
           </div>
           <div class="collapsible-body collapsed"><div class="bl-body">
             <div class="kreptd-check-row">
@@ -2135,8 +2081,8 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
-          <div class="result-right"><div class="bl-status-pill ${pillClass}">${pillText}</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="bl-status-pill ${pillClass}">${pillText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="bl-section-title">🏢 Dane podmiotu</div>
@@ -2200,8 +2146,8 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
-          <div class="result-right"><div class="bl-status-pill error">Niedostępne</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="bl-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="kreptd-check-row">
@@ -2254,8 +2200,8 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej (Biznes.gov.pl)</div>
             </div>
           </div>
-          <div class="result-right"><div class="ceidg-status-pill info">Sprawdzam…</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="ceidg-status-pill info">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-loading">
           <div class="ceidg-loading-inner">
@@ -2335,8 +2281,8 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
-          <div class="result-right"><div class="ceidg-status-pill ${st.cls}">${st.text}</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-section-title">🏢 Dane przedsiębiorcy</div>
@@ -2401,8 +2347,8 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
-          <div class="result-right"><div class="ceidg-status-pill ${st.cls}">${st.text}</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-grid">
@@ -2433,8 +2379,8 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
-          <div class="result-right"><div class="ceidg-status-pill error">Nie znaleziono</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="ceidg-status-pill error">Nie znaleziono</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
@@ -2461,8 +2407,8 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
-          <div class="result-right"><div class="ceidg-status-pill error">Niedostępne</div>
-          <span class="collapse-chevron collapsed">▾</span></div>
+          <div class="ceidg-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
@@ -2486,7 +2432,7 @@
 
   // ── Collapsible sections ─────────────────────────────────────────────────
   function toggleSection(chevronEl) {
-    const card   = chevronEl.closest('.result-card, .kreptd-card, .bl-card, .ceidg-card');
+    const card   = chevronEl.closest('[class$="-card"], .kreptd-card, .bl-card, .ceidg-card');
     const body   = card.querySelector('.collapsible-body');
     if (!body) return;
     const isCollapsed = body.classList.contains('collapsed');
