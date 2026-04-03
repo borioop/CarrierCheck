@@ -665,6 +665,40 @@
     .result-grid { grid-template-columns: 1fr; }
   }
 
+  /* ── Collapsible headers (shared) ───────────────────────────────────────── */
+  .collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    transition: filter 0.15s;
+  }
+  .collapsible-header:hover { filter: brightness(1.12); }
+
+  .collapse-chevron {
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: 4px;
+    line-height: 1;
+  }
+
+  .collapsible-body {
+    overflow: hidden;
+    max-height: 3000px;
+    transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity   0.28s ease;
+    opacity: 1;
+  }
+
+  .collapsible-body.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+  }
+
+  .collapse-chevron.collapsed {
+    transform: rotate(-90deg);
+  }
+
   /* KREPTD section */
   .kreptd-card {
     margin-top: 16px;
@@ -1678,7 +1712,7 @@
     // Show loading shell
     container.innerHTML = `
       <div class="kreptd-card">
-        <div class="kreptd-header">
+        <div class="kreptd-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="kreptd-title-row">
             <div class="kreptd-logo">🚛</div>
             <div>
@@ -1687,14 +1721,15 @@
             </div>
           </div>
           <div class="kreptd-status-pill warn">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="kreptd-loading">
+        <div class="collapsible-body collapsed"><div class="kreptd-loading">
           <div class="kreptd-loading-inner">
             <div class="kreptd-spinner"></div>
             Pobieranie danych z KREPTD / dane.gov.pl…
           </div>
         </div>
-      </div>`;
+      </div></div>`;
 
     // ── Backend CarrierCheck (PythonAnywhere) ────────────────────────────────
     async function fetchKreptdData(nip) {
@@ -1737,7 +1772,7 @@
     if (records.length === 0) {
       container.innerHTML = `
         <div class="kreptd-card">
-          <div class="kreptd-header">
+          <div class="kreptd-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
             <div class="kreptd-title-row">
               <div class="kreptd-logo">🚛</div>
               <div>
@@ -1746,8 +1781,9 @@
               </div>
             </div>
             <div class="kreptd-status-pill warn">Brak wpisu</div>
+          <span class="collapse-chevron collapsed">▾</span>
           </div>
-          <div class="kreptd-body">
+          <div class="collapsible-body collapsed"><div class="kreptd-body">
             <div class="kreptd-check-row">
               <div class="check-indicator fail">✗</div>
               <div class="check-content">
@@ -1798,7 +1834,7 @@
 
     container.innerHTML = `
       <div class="kreptd-card">
-        <div class="kreptd-header">
+        <div class="kreptd-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="kreptd-title-row">
             <div class="kreptd-logo">🚛</div>
             <div>
@@ -1807,8 +1843,9 @@
             </div>
           </div>
           <div class="kreptd-status-pill ${statusClass}">${statusText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="kreptd-body">
+        <div class="collapsible-body collapsed"><div class="kreptd-body">
 
           ${firmName !== '—' ? `
           <div class="kreptd-section">
@@ -1876,14 +1913,14 @@
             <pre class="raw-data">${JSON.stringify(records, null, 2)}</pre>
           </div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   function renderKreptdOffline(nip, errMsg) {
     const container = document.getElementById('kreptdContainer');
     container.innerHTML = `
       <div class="kreptd-card">
-        <div class="kreptd-header">
+        <div class="kreptd-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="kreptd-title-row">
             <div class="kreptd-logo">🚛</div>
             <div>
@@ -1892,8 +1929,9 @@
             </div>
           </div>
           <div class="kreptd-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="kreptd-body">
+        <div class="collapsible-body collapsed"><div class="kreptd-body">
           <div class="kreptd-check-row">
             <div class="check-indicator fail">!</div>
             <div class="check-content">
@@ -1922,7 +1960,7 @@
             Możesz również sprawdzić bezpośrednio: <a href="https://kreptd.gitd.gov.pl" target="_blank">kreptd.gitd.gov.pl</a>
           </div>
         </div>
-      </div>`;
+      </div></div>`;
   }
   // ── /KREPTD ─────────────────────────────────────────────────────────────
 
@@ -1938,7 +1976,7 @@
     // Stan ładowania
     container.innerHTML = `
       <div class="bl-card">
-        <div class="bl-header">
+        <div class="bl-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="bl-title-row">
             <div class="bl-logo">🏦</div>
             <div>
@@ -1947,14 +1985,15 @@
             </div>
           </div>
           <div class="bl-status-pill warn">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="bl-loading">
+        <div class="collapsible-body collapsed"><div class="bl-loading">
           <div class="bl-loading-inner">
             <div class="bl-spinner"></div>
             Pobieranie danych z wl-api.mf.gov.pl…
           </div>
         </div>
-      </div>`;
+      </div></div>`;
 
     const BACKEND = 'https://carriercheck-backend.onrender.com';
 
@@ -1977,7 +2016,7 @@
     if (!json.found || !json.result) {
       container.innerHTML = `
         <div class="bl-card">
-          <div class="bl-header err-header">
+          <div class="bl-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
             <div class="bl-title-row">
               <div class="bl-logo">🏦</div>
               <div>
@@ -1986,8 +2025,9 @@
               </div>
             </div>
             <div class="bl-status-pill error">Nie znaleziono</div>
+          <span class="collapse-chevron collapsed">▾</span>
           </div>
-          <div class="bl-body">
+          <div class="collapsible-body collapsed"><div class="bl-body">
             <div class="kreptd-check-row">
               <div class="check-indicator fail">✗</div>
               <div class="check-content">
@@ -1999,7 +2039,7 @@
               Zweryfikuj bezpośrednio na <a href="https://www.podatki.gov.pl/wykaz-podatnikow-vat-wyszukiwarka" target="_blank">podatki.gov.pl</a>
             </div>
           </div>
-        </div>`;
+        </div></div>`;
       return;
     }
 
@@ -2033,7 +2073,7 @@
 
     container.innerHTML = `
       <div class="bl-card">
-        <div class="bl-header ${headerClass}">
+        <div class="bl-header ${headerClass} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="bl-title-row">
             <div class="bl-logo">🏦</div>
             <div>
@@ -2042,8 +2082,9 @@
             </div>
           </div>
           <div class="bl-status-pill ${pillClass}">${pillText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="bl-body">
+        <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="bl-section-title">🏢 Dane podmiotu</div>
           <div class="bl-grid">
             <div class="bl-field">
@@ -2090,14 +2131,14 @@
             <pre class="raw-data">${JSON.stringify(json.result, null, 2)}</pre>
           </div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   function renderBialaListaError(nip, errMsg) {
     const container = document.getElementById('bialalistaContainer');
     container.innerHTML = `
       <div class="bl-card">
-        <div class="bl-header err-header">
+        <div class="bl-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="bl-title-row">
             <div class="bl-logo">🏦</div>
             <div>
@@ -2106,8 +2147,9 @@
             </div>
           </div>
           <div class="bl-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="bl-body">
+        <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="kreptd-check-row">
             <div class="check-indicator fail">!</div>
             <div class="check-content">
@@ -2136,7 +2178,7 @@
             Możesz sprawdzić bezpośrednio: <a href="https://www.podatki.gov.pl/wykaz-podatnikow-vat-wyszukiwarka" target="_blank">podatki.gov.pl</a>
           </div>
         </div>
-      </div>`;
+      </div></div>`;
   }
   // ── /Biała Lista VAT ──────────────────────────────────────────────────────
 
@@ -2150,7 +2192,7 @@
 
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header">
+        <div class="ceidg-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
@@ -2159,14 +2201,15 @@
             </div>
           </div>
           <div class="ceidg-status-pill info">Sprawdzam…</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="ceidg-loading">
+        <div class="collapsible-body collapsed"><div class="ceidg-loading">
           <div class="ceidg-loading-inner">
             <div class="ceidg-spinner"></div>
             Pobieranie danych z dane.biznes.gov.pl…
           </div>
         </div>
-      </div>`;
+      </div></div>`;
 
     const BACKEND = 'https://carriercheck-backend.onrender.com';
 
@@ -2230,7 +2273,7 @@
 
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header ${headerClass}">
+        <div class="ceidg-header ${headerClass} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
@@ -2239,8 +2282,9 @@
             </div>
           </div>
           <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="ceidg-body">
+        <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-section-title">🏢 Dane przedsiębiorcy</div>
           <div class="ceidg-grid">
             <div class="ceidg-field" style="grid-column:1/-1">
@@ -2282,7 +2326,7 @@
             <pre class="raw-data">${JSON.stringify(f, null, 2)}</pre>
           </div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   function renderCeidgFromList(nip, f) {
@@ -2295,7 +2339,7 @@
     const headerClass = st.cls === 'ok' ? 'ok-header' : st.cls === 'error' ? 'err-header' : '';
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header ${headerClass}">
+        <div class="ceidg-header ${headerClass} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
@@ -2304,8 +2348,9 @@
             </div>
           </div>
           <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="ceidg-body">
+        <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-grid">
             <div class="ceidg-field" style="grid-column:1/-1">
               <span class="ceidg-field-label">Nazwa</span>
@@ -2319,14 +2364,14 @@
           </div>
           <div class="ceidg-note">Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (MRiT)</div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   function renderCeidgNotFound(nip) {
     const container = document.getElementById('ceidgContainer');
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header err-header">
+        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
@@ -2335,8 +2380,9 @@
             </div>
           </div>
           <div class="ceidg-status-pill error">Nie znaleziono</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="ceidg-body">
+        <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
             <div class="check-indicator fail">✗</div>
             <div class="check-content">
@@ -2346,14 +2392,14 @@
           </div>
           <div class="ceidg-note">Sprawdź bezpośrednio: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl/wyszukiwarka-firm</a></div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   function renderCeidgError(nip, errMsg) {
     const container = document.getElementById('ceidgContainer');
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header err-header">
+        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
@@ -2362,8 +2408,9 @@
             </div>
           </div>
           <div class="ceidg-status-pill error">Niedostępne</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="ceidg-body">
+        <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
             <div class="check-indicator fail">!</div>
             <div class="check-content">
@@ -2379,9 +2426,20 @@
           </div>
           <div class="ceidg-note" style="margin-top:14px">Sprawdź bezpośrednio: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl/wyszukiwarka-firm</a></div>
         </div>
-      </div>`;
+      </div></div>`;
   }
   // ── /CEIDG ────────────────────────────────────────────────────────────────
+
+  // ── Collapsible sections ─────────────────────────────────────────────────
+  function toggleSection(chevronEl) {
+    const card   = chevronEl.closest('[class$="-card"], .kreptd-card, .bl-card, .ceidg-card');
+    const body   = card.querySelector('.collapsible-body');
+    if (!body) return;
+    const isCollapsed = body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', !isCollapsed);
+    chevronEl.classList.toggle('collapsed', !isCollapsed);
+  }
+  // ── /Collapsible sections ─────────────────────────────────────────────────
 
   function getCountryName(code) {
     const names = {
