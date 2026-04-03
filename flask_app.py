@@ -11,7 +11,7 @@ CEIDG_API_KEY = 'eyJraWQiOiJjZWlkZyIsImFsZyI6IkhTNTEyIn0.eyJnaXZlbl9uYW1lIjoiREF
 def index():
     return send_from_directory(os.path.dirname(__file__), 'carrier-verify.html')
 
-# ── VIES proxy ────────────────────────────────────────────────────────────────
+# VIES proxy
 @app.route('/vies')
 def vies():
     country = request.args.get('country', '').upper().strip()
@@ -29,27 +29,24 @@ def vies():
         except Exception as e2:
             return jsonify({'error': str(e2)}), 500
 
-# ── KREPTD proxy ──────────────────────────────────────────────────────────────
+# KREPTD proxy
 @app.route('/kreptd')
 def kreptd():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
         return jsonify({'success': False, 'error': 'Nieprawidłowy NIP'}), 400
-
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
         'Referer': 'https://dane.gov.pl/',
         'Accept-Language': 'pl-PL,pl;q=0.9',
     }
-
     all_records = []
     errors = []
     resources = [
         '28f6a3dc-be26-4e30-be8e-0e1ce498c935',
         'f4026e09-77c1-466c-a9d5-46b05c62a9b4',
     ]
-
     for resource_id in resources:
         try:
             sql = f'SELECT * FROM "{resource_id}" WHERE nip = \'{nip}\' LIMIT 20'
@@ -66,7 +63,6 @@ def kreptd():
             all_records.extend(records)
         except Exception as e:
             errors.append(f'{resource_id}: {str(e)}')
-
     if all_records:
         return jsonify({'success': True, 'records': all_records})
     elif errors:
@@ -74,131 +70,75 @@ def kreptd():
     else:
         return jsonify({'success': True, 'records': []})
 
-# ── Biała Lista VAT proxy ─────────────────────────────────────────────────────
+# Biala Lista VAT proxy
 @app.route('/bialalistava')
 def bialalistava():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
         return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
-
-    # Oficjalne API MF – Biała Lista podatników VAT
     url = f'https://wl-api.mf.gov.pl/api/search/nip/{nip}'
-    params = {
-        'date': __import__('datetime').date.today().isoformat()
-    }
-
+    params = {'date': __import__('datetime').date.today().isoformat()}
     try:
         resp = requests.get(url, params=params, timeout=20)
         print(f"[BIALA_LISTA] NIP={nip} status={resp.status_code} body={resp.text[:400]}")
-
         if resp.status_code == 404:
-            # Nie znaleziono — podatnik nie figuruje na liście
-            return jsonify({
-                'success': True,
-                'found': False,
-                'nip': nip,
-                'result': None,
-                'source': 'wl-api.mf.gov.pl'
-            })
-
+            return jsonify({'success': True, 'found': False, 'nip': nip, 'result': None, 'source': 'wl-api.mf.gov.pl'})
         resp.raise_for_status()
         data = resp.json()
-
         result = data.get('result', {})
         subject = result.get('subject', None)
-
         return jsonify({
-            'success': True,
-            'found': subject is not None,
-            'nip': nip,
-            'result': subject,
-            'requestDateTime': result.get('requestDateTime', ''),
+            'success': True, 'found': subject is not None, 'nip': nip,
+            'result': subject, 'requestDateTime': result.get('requestDateTime', ''),
             'source': 'wl-api.mf.gov.pl'
         })
-
     except requests.exceptions.Timeout:
         return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API MF niedostępne)'}), 504
     except requests.exceptions.HTTPError as e:
-        return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}'}), 502
+        return jsonify({'success': False, 'error': f'Blad HTTP: {str(e)}'}), 502
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ── CEIDG proxy ───────────────────────────────────────────────────────────────
+# CEIDG proxy - TRYB DIAGNOSTYCZNY
 @app.route('/ceidg')
 def ceidg():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
-        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+        return jsonify({'success': False, 'error': 'Nieprawidlowy NIP (wymagane 10 cyfr)'}), 400
 
-    # /firmy (liczba mnoga) — endpoint do wyszukiwania listy firm po kryteriach (nip, nazwa, itp.)
-    # /firma (pojedyncza) — do pobierania konkretnego wpisu po UUID
     url = 'https://dane.biznes.gov.pl/api/ceidg/v2/firmy'
     headers = {
-        'Authorization': f'Bearer {CEIDG_API_KEY}',
+        'Authorization': 'Bearer ' + CEIDG_API_KEY,
         'Accept': 'application/json',
     }
     params = {'nip': nip, 'limit': 10}
 
     try:
         resp = requests.get(url, headers=headers, params=params, timeout=20)
-        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={resp.text[:600]}")
+        raw_body = resp.text
+        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={raw_body[:800]}")
 
-        # 204 = brak wyników (nie znaleziono) — brak body
-        if resp.status_code == 204:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
+        try:
+            raw_json = resp.json()
+        except Exception:
+            raw_json = None
 
-        # 404 = zasób nie istnieje
-        if resp.status_code == 404:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
-
-        resp.raise_for_status()
-
-        # Odpowiedź może być pustym body przy 200 (edge case)
-        body = resp.text.strip()
-        if not body:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
-
-        data = resp.json()
-
-        # API v2 zwraca: {"firmy": [...]} lub {"firma": [...]}
-        # Wyciągamy niezależnie od klucza
-        firmy = None
-        for key in ('firmy', 'firma', 'results', 'data', 'items'):
-            val = data.get(key)
-            if val is not None:
-                firmy = val
-                break
-
-        # Jeśli żaden klucz nie pasuje — może sama lista lub dict
-        if firmy is None:
-            if isinstance(data, list):
-                firmy = data
-            elif isinstance(data, dict):
-                # spróbuj pierwszą wartość będącą listą
-                for v in data.values():
-                    if isinstance(v, list):
-                        firmy = v
-                        break
-                if firmy is None:
-                    firmy = [data]  # pojedynczy obiekt
-            else:
-                firmy = []
-
-        if isinstance(firmy, dict):
-            firmy = [firmy]
-
+        # TRYB DIAGNOSTYCZNY - zwroc surowe dane zeby zobaczyc strukture
         return jsonify({
             'success': True,
-            'found': len(firmy) > 0,
+            'found': False,
+            'firmy': [],
             'nip': nip,
-            'firmy': firmy,
-            'source': 'dane.biznes.gov.pl',
-            '_raw_keys': list(data.keys()) if isinstance(data, dict) else [],
+            '_diag': {
+                'http_status': resp.status_code,
+                'body_raw': raw_body[:2000],
+                'body_json': raw_json,
+                'url_called': url,
+                'params_sent': params,
+            }
         })
 
     except requests.exceptions.Timeout:
-        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API CEIDG niedostępne)'}), 504
-    except requests.exceptions.HTTPError as e:
-        return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}', 'status_code': resp.status_code}), 502
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania'}), 504
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
