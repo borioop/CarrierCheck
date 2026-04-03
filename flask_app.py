@@ -5,6 +5,8 @@ import json
 
 app = Flask(__name__)
 
+CEIDG_API_KEY = 'eyJraWQiOiJjZWlkZyIsImFsZyI6IkhTNTEyIn0.eyJnaXZlbl9uYW1lIjoiREFXSUQiLCJwZXNlbCI6Ijk5MDIyMDAzNTMzIiwiaWF0IjoxNzc1MjMyNDU5LCJmYW1pbHlfbmFtZSI6IkpVU1RZxYNTS0kiLCJjbGllbnRfaWQiOiJVU0VSLTk5MDIyMDAzNTMzLURBV0lELUpVU1RZxYNTS0kifQ.RgU7tn2IVo8wBj7TStTgv2akNfnkWqMYZkKSAfIG4xTOrkTpQSRje73P1JK0LC1yZhXRnwd1bT8GeRBK8Wvk2g'
+
 @app.route('/')
 def index():
     return send_from_directory(os.path.dirname(__file__), 'carrier-verify.html')
@@ -118,5 +120,47 @@ def bialalistava():
         return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API MF niedostępne)'}), 504
     except requests.exceptions.HTTPError as e:
         return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}'}), 502
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ── CEIDG proxy ───────────────────────────────────────────────────────────────
+@app.route('/ceidg')
+def ceidg():
+    nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
+    if not nip or len(nip) != 10 or not nip.isdigit():
+        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+
+    url = 'https://dane.biznes.gov.pl/api/ceidg/v2/firma'
+    headers = {
+        'Authorization': f'Bearer {CEIDG_API_KEY}',
+        'Accept': 'application/json',
+    }
+    params = {'nip': nip, 'limit': 10}
+
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=20)
+        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={resp.text[:400]}")
+
+        if resp.status_code == 404:
+            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
+
+        resp.raise_for_status()
+        data = resp.json()
+        firmy = data.get('firma', data.get('firmy', []))
+        if isinstance(firmy, dict):
+            firmy = [firmy]
+
+        return jsonify({
+            'success': True,
+            'found': len(firmy) > 0,
+            'nip': nip,
+            'firmy': firmy,
+            'source': 'dane.biznes.gov.pl'
+        })
+
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API CEIDG niedostępne)'}), 504
+    except requests.exceptions.HTTPError as e:
+        return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}', 'status_code': resp.status_code}), 502
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
