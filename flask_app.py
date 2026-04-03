@@ -130,7 +130,9 @@ def ceidg():
     if not nip or len(nip) != 10 or not nip.isdigit():
         return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
 
-    url = 'https://dane.biznes.gov.pl/api/ceidg/v2/firma'
+    # /firmy (liczba mnoga) — endpoint do wyszukiwania listy firm po kryteriach (nip, nazwa, itp.)
+    # /firma (pojedyncza) — do pobierania konkretnego wpisu po UUID
+    url = 'https://dane.biznes.gov.pl/api/ceidg/v2/firmy'
     headers = {
         'Authorization': f'Bearer {CEIDG_API_KEY}',
         'Accept': 'application/json',
@@ -139,14 +141,49 @@ def ceidg():
 
     try:
         resp = requests.get(url, headers=headers, params=params, timeout=20)
-        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={resp.text[:400]}")
+        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={resp.text[:600]}")
 
+        # 204 = brak wyników (nie znaleziono) — brak body
+        if resp.status_code == 204:
+            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
+
+        # 404 = zasób nie istnieje
         if resp.status_code == 404:
             return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
 
         resp.raise_for_status()
+
+        # Odpowiedź może być pustym body przy 200 (edge case)
+        body = resp.text.strip()
+        if not body:
+            return jsonify({'success': True, 'found': False, 'nip': nip, 'firmy': []})
+
         data = resp.json()
-        firmy = data.get('firma', data.get('firmy', []))
+
+        # API v2 zwraca: {"firmy": [...]} lub {"firma": [...]}
+        # Wyciągamy niezależnie od klucza
+        firmy = None
+        for key in ('firmy', 'firma', 'results', 'data', 'items'):
+            val = data.get(key)
+            if val is not None:
+                firmy = val
+                break
+
+        # Jeśli żaden klucz nie pasuje — może sama lista lub dict
+        if firmy is None:
+            if isinstance(data, list):
+                firmy = data
+            elif isinstance(data, dict):
+                # spróbuj pierwszą wartość będącą listą
+                for v in data.values():
+                    if isinstance(v, list):
+                        firmy = v
+                        break
+                if firmy is None:
+                    firmy = [data]  # pojedynczy obiekt
+            else:
+                firmy = []
+
         if isinstance(firmy, dict):
             firmy = [firmy]
 
@@ -155,7 +192,8 @@ def ceidg():
             'found': len(firmy) > 0,
             'nip': nip,
             'firmy': firmy,
-            'source': 'dane.biznes.gov.pl'
+            'source': 'dane.biznes.gov.pl',
+            '_raw_keys': list(data.keys()) if isinstance(data, dict) else [],
         })
 
     except requests.exceptions.Timeout:
