@@ -2151,9 +2151,9 @@
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const json = await resp.json();
       if (!json.success) throw new Error(json.error || 'Nieznany błąd');
-      // Pokaż surowe dane w konsoli dla debugowania
-      console.log('[CEIDG] odpowiedź:', json);
-      renderCeidg(nip, json);
+      // DEBUG — surowa odpowiedź bezpośrednio na stronie
+      const debugHtml = '<div class="ceidg-card"><div class="ceidg-header"><div class="ceidg-title-row"><div class="ceidg-logo">🔍</div><div><div class="ceidg-label">CEIDG — RAW DEBUG</div><div class="ceidg-sublabel">Surowa odpowiedź backendu — usuń po diagnozie</div></div></div><div class="ceidg-status-pill info">DEBUG</div></div><div class="ceidg-body"><div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-bottom:12px">found=' + json.found + ' &nbsp;|&nbsp; firmy.length=' + (Array.isArray(json.firmy) ? json.firmy.length : 'BRAK tablicy: ' + typeof json.firmy) + ' &nbsp;|&nbsp; _raw_keys=' + JSON.stringify(json._raw_keys) + '</div><pre style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:var(--mono);font-size:11px;color:var(--text-dim);overflow-x:auto;white-space:pre-wrap;word-break:break-all">' + JSON.stringify(json, null, 2) + '</pre></div></div>';
+      document.getElementById('ceidgContainer').innerHTML = debugHtml;
     } catch (err) {
       renderCeidgError(nip, err.message);
     }
