@@ -196,7 +196,6 @@ def ceidg():
             '_raw_keys': list(data.keys()) if isinstance(data, dict) else [],
         })
 
-    
     except requests.exceptions.Timeout:
         return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API CEIDG niedostępne)'}), 504
     except requests.exceptions.HTTPError as e:
