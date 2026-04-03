@@ -1093,6 +1093,181 @@
 
   .bl-note a { color: var(--warn); text-decoration: none; }
   .bl-note a:hover { text-decoration: underline; }
+
+  /* ── CEIDG ──────────────────────────────────────────────────────────── */
+  .ceidg-card {
+    margin-top: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ceidg-header {
+    background: rgba(0, 180, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 180, 255, 0.25);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ceidg-header.ok-header {
+    background: rgba(0, 229, 160, 0.08);
+    border-bottom: 1px solid rgba(0, 229, 160, 0.2);
+  }
+
+  .ceidg-header.err-header {
+    background: rgba(255, 68, 102, 0.08);
+    border-bottom: 1px solid rgba(255, 68, 102, 0.2);
+  }
+
+  .ceidg-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ceidg-logo {
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 180, 255, 0.2);
+    border: 1px solid rgba(0, 180, 255, 0.4);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .ceidg-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #00b4ff;
+    letter-spacing: 0.5px;
+  }
+
+  .ceidg-sublabel {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .ceidg-status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .ceidg-status-pill.ok    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .ceidg-status-pill.warn  { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,170,0,0.3); }
+  .ceidg-status-pill.error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,68,102,0.3); }
+  .ceidg-status-pill.info  { background: rgba(0,180,255,0.12); color: #00b4ff;    border: 1px solid rgba(0,180,255,0.3); }
+
+  .ceidg-body {
+    background: var(--surface);
+    padding: 28px;
+  }
+
+  .ceidg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .ceidg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .ceidg-field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .ceidg-field-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .ceidg-field-value.accent { color: var(--accent); font-size: 15px; }
+  .ceidg-field-value.empty  { color: var(--text-muted); font-style: italic; font-size: 11px; font-family: var(--sans); }
+  .ceidg-field-value.aktywna { color: var(--accent); }
+  .ceidg-field-value.zawieszona { color: var(--warn); }
+  .ceidg-field-value.wykreslona { color: var(--danger); }
+
+  .ceidg-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ceidg-loading {
+    padding: 32px;
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .ceidg-loading-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .ceidg-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,180,255,0.2);
+    border-top-color: #00b4ff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .ceidg-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .ceidg-note a { color: #00b4ff; text-decoration: none; }
+  .ceidg-note a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -1186,11 +1361,13 @@
   <div id="resultContainer"></div>
   <div id="kreptdContainer"></div>
   <div id="bialalistaContainer"></div>
+  <div id="ceidgContainer"></div>
 
   <div class="info-strip">
     <div class="info-item"><span class="info-dot"></span> Dane z systemu VIES (Komisja Europejska)</div>
     <div class="info-item"><span class="info-dot"></span> KREPTD via dane.gov.pl (GITD)</div>
     <div class="info-item"><span class="info-dot"></span> Biała Lista VAT via wl-api.mf.gov.pl (MF)</div>
+    <div class="info-item"><span class="info-dot"></span> CEIDG via dane.biznes.gov.pl (MRiT)</div>
     <div class="info-item"><span class="info-dot"></span> Weryfikacja w czasie rzeczywistym</div>
   </div>
 
@@ -1245,6 +1422,7 @@
     document.getElementById('resultContainer').innerHTML = '';
     document.getElementById('kreptdContainer').innerHTML = '';
     document.getElementById('bialalistaContainer').innerHTML = '';
+    document.getElementById('ceidgContainer').innerHTML = '';
 
     // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
     const BACKEND = 'https://carriercheck-backend.onrender.com';
@@ -1271,6 +1449,7 @@
       if (countryCode === 'PL') {
         checkKreptd(vatNumber);
         checkBialaLista(vatNumber);
+        checkCeidg(vatNumber);
       }
 
     } catch (err) {
@@ -1933,6 +2112,272 @@
       </div>`;
   }
   // ── /Biała Lista VAT ──────────────────────────────────────────────────────
+
+  // ── CEIDG ────────────────────────────────────────────────────────────────
+  async function checkCeidg(nip) {
+    const container = document.getElementById('ceidgContainer');
+
+    if (!/^\d{10}$/.test(nip)) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="ceidg-card">
+        <div class="ceidg-header">
+          <div class="ceidg-title-row">
+            <div class="ceidg-logo">🏛️</div>
+            <div>
+              <div class="ceidg-label">CEIDG</div>
+              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+            </div>
+          </div>
+          <div class="ceidg-status-pill info">Sprawdzam…</div>
+        </div>
+        <div class="ceidg-loading">
+          <div class="ceidg-loading-inner">
+            <div class="ceidg-spinner"></div>
+            Pobieranie danych z dane.biznes.gov.pl…
+          </div>
+        </div>
+      </div>`;
+
+    const BACKEND = 'https://carriercheck-backend.onrender.com';
+
+    try {
+      const resp = await fetch(`${BACKEND}/ceidg?nip=${nip}`, {
+        signal: AbortSignal.timeout(25000)
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Nieznany błąd');
+      renderCeidg(nip, json);
+    } catch (err) {
+      renderCeidgError(nip, err.message);
+    }
+  }
+
+  function renderCeidg(nip, json) {
+    const container = document.getElementById('ceidgContainer');
+
+    if (!json.found || !json.firmy || json.firmy.length === 0) {
+      container.innerHTML = `
+        <div class="ceidg-card">
+          <div class="ceidg-header err-header">
+            <div class="ceidg-title-row">
+              <div class="ceidg-logo">🏛️</div>
+              <div>
+                <div class="ceidg-label">CEIDG</div>
+                <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+              </div>
+            </div>
+            <div class="ceidg-status-pill warn">Nie znaleziono</div>
+          </div>
+          <div class="ceidg-body">
+            <div class="kreptd-check-row">
+              <div class="check-indicator fail">✗</div>
+              <div class="check-content">
+                <div class="check-name">NIP ${nip} nie figuruje w CEIDG</div>
+                <div class="check-detail">Podmiot nie jest wpisany do Centralnej Ewidencji Działalności Gospodarczej. Może być spółką zarejestrowaną w KRS.</div>
+              </div>
+            </div>
+            <div class="ceidg-note">
+              Zweryfikuj bezpośrednio na <a href="https://aplikacja.ceidg.gov.pl/ceidg/ceidg.public.ui/Search.aspx" target="_blank">aplikacja.ceidg.gov.pl</a>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const firmy = json.firmy;
+    const firm = firmy[0];
+
+    // Wydobycie pól z różnych możliwych struktur API
+    const nazwa = firm.nazwa || firm.imie_nazwisko || (firm.imie && firm.nazwisko ? `${firm.imie} ${firm.nazwisko}` : null) || '—';
+    const status = firm.status || firm.statusDzialalnosci || '—';
+    const nipVal = firm.nip || nip;
+    const regon = firm.regon || '—';
+    const pkd = firm.pkdPrzewazajace?.kod
+      ? `${firm.pkdPrzewazajace.kod} — ${firm.pkdPrzewazajace.opis || ''}`
+      : (firm.pkd || '—');
+    const dataRozpoczecia = firm.dataRozpoczeciaWykonywaniaDzialalnosciGospodarczej
+      || firm.dataRozpoczecia || firm.data_rozpoczecia || '—';
+    const dataZawieszenia = firm.dataZawieszeniaDzialalnosciGospodarczej
+      || firm.dataZawieszenia || '—';
+    const dataWykreslenia = firm.dataWykresleniaDzialalnosciGospodarczej
+      || firm.dataWykreslenia || '—';
+
+    const adresGlowny = firm.adresDzialalnosci
+      ? [firm.adresDzialalnosci.ulica, firm.adresDzialalnosci.budynek,
+         firm.adresDzialalnosci.lokal ? `/${firm.adresDzialalnosci.lokal}` : '',
+         firm.adresDzialalnosci.kodPocztowy, firm.adresDzialalnosci.miejscowosc]
+          .filter(Boolean).join(' ')
+      : (firm.adres || '—');
+
+    const emailFirmy = firm.email || firm.adresEmail || '—';
+    const telefonFirmy = firm.telefon || '—';
+    const wwwFirmy = firm.www || '—';
+
+    const statusLower = (status || '').toLowerCase();
+    let statusClass = 'info';
+    let headerClass = '';
+    let pillText = status;
+    if (statusLower.includes('aktywn') || statusLower === 'aktywna') {
+      statusClass = 'ok'; headerClass = 'ok-header';
+      pillText = 'Działalność aktywna';
+    } else if (statusLower.includes('zawieszon')) {
+      statusClass = 'warn'; pillText = 'Działalność zawieszona';
+    } else if (statusLower.includes('wykreslon') || statusLower.includes('wyrejestr')) {
+      statusClass = 'error'; headerClass = 'err-header'; pillText = 'Działalność wykreślona';
+    }
+
+    const statusValueClass = statusLower.includes('aktywn') ? 'aktywna'
+      : statusLower.includes('zawieszon') ? 'zawieszona'
+      : statusLower.includes('wykreslon') ? 'wykreslona' : '';
+
+    const extraFirmy = firmy.length > 1
+      ? `<div class="ceidg-section-title">📋 Pozostałe wpisy (${firmy.length - 1})</div>
+         ${firmy.slice(1).map(f => `
+           <div class="kreptd-check-row">
+             <div class="check-indicator info">i</div>
+             <div class="check-content">
+               <div class="check-name">${f.nazwa || f.imie_nazwisko || (f.imie && f.nazwisko ? f.imie+' '+f.nazwisko : 'Brak nazwy')}</div>
+               <div class="check-detail">Status: ${f.status || '—'} · NIP: ${f.nip || nip}</div>
+             </div>
+           </div>`).join('')}` : '';
+
+    container.innerHTML = `
+      <div class="ceidg-card">
+        <div class="ceidg-header ${headerClass}">
+          <div class="ceidg-title-row">
+            <div class="ceidg-logo">🏛️</div>
+            <div>
+              <div class="ceidg-label">CEIDG</div>
+              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+            </div>
+          </div>
+          <div class="ceidg-status-pill ${statusClass}">${pillText}</div>
+        </div>
+        <div class="ceidg-body">
+          <div class="ceidg-section-title">🏢 Dane przedsiębiorcy</div>
+          <div class="ceidg-grid">
+            <div class="ceidg-field" style="grid-column:1/-1">
+              <span class="ceidg-field-label">Firma / Imię i nazwisko</span>
+              <span class="ceidg-field-value accent">${nazwa}</span>
+            </div>
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">NIP</span>
+              <span class="ceidg-field-value">${nipVal}</span>
+            </div>
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">REGON</span>
+              <span class="ceidg-field-value ${regon === '—' ? 'empty' : ''}">${regon}</span>
+            </div>
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Status działalności</span>
+              <span class="ceidg-field-value ${statusValueClass}">${status}</span>
+            </div>
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">PKD przeważające</span>
+              <span class="ceidg-field-value ${pkd === '—' ? 'empty' : ''}">${pkd}</span>
+            </div>
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Data rozpoczęcia</span>
+              <span class="ceidg-field-value ${dataRozpoczecia === '—' ? 'empty' : ''}">${dataRozpoczecia}</span>
+            </div>
+            ${dataZawieszenia !== '—' ? `
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Data zawieszenia</span>
+              <span class="ceidg-field-value zawieszona">${dataZawieszenia}</span>
+            </div>` : ''}
+            ${dataWykreslenia !== '—' ? `
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Data wykreślenia</span>
+              <span class="ceidg-field-value wykreslona">${dataWykreslenia}</span>
+            </div>` : ''}
+            ${adresGlowny !== '—' ? `
+            <div class="ceidg-field" style="grid-column:1/-1">
+              <span class="ceidg-field-label">Adres głównego miejsca wykonywania działalności</span>
+              <span class="ceidg-field-value">${adresGlowny}</span>
+            </div>` : ''}
+            ${emailFirmy !== '—' ? `
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">E-mail</span>
+              <span class="ceidg-field-value">${emailFirmy}</span>
+            </div>` : ''}
+            ${telefonFirmy !== '—' ? `
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Telefon</span>
+              <span class="ceidg-field-value">${telefonFirmy}</span>
+            </div>` : ''}
+            ${wwwFirmy !== '—' ? `
+            <div class="ceidg-field">
+              <span class="ceidg-field-label">Strona WWW</span>
+              <span class="ceidg-field-value"><a href="${wwwFirmy.startsWith('http') ? wwwFirmy : 'https://'+wwwFirmy}" target="_blank" style="color:#00b4ff">${wwwFirmy}</a></span>
+            </div>` : ''}
+          </div>
+
+          ${extraFirmy}
+
+          <div class="ceidg-note" style="margin-top:16px">
+            Dane z: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (CEIDG — Ministerstwo Rozwoju i Technologii).
+            Pełna weryfikacja: <a href="https://aplikacja.ceidg.gov.pl/ceidg/ceidg.public.ui/Search.aspx" target="_blank">aplikacja.ceidg.gov.pl</a>
+          </div>
+
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe CEIDG (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json.firmy, null, 2)}</pre>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderCeidgError(nip, errMsg) {
+    const container = document.getElementById('ceidgContainer');
+    container.innerHTML = `
+      <div class="ceidg-card">
+        <div class="ceidg-header err-header">
+          <div class="ceidg-title-row">
+            <div class="ceidg-logo">🏛️</div>
+            <div>
+              <div class="ceidg-label">CEIDG</div>
+              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+            </div>
+          </div>
+          <div class="ceidg-status-pill error">Niedostępne</div>
+        </div>
+        <div class="ceidg-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">!</div>
+            <div class="check-content">
+              <div class="check-name">Nie udało się pobrać danych CEIDG</div>
+              <div class="check-detail">
+                API CEIDG tymczasowo niedostępne lub podmiot nie jest wpisany do ewidencji.<br>
+                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onclick="checkCeidg('${nip}')" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid #00b4ff;
+              background:rgba(0,180,255,0.1);color:#00b4ff;
+              cursor:pointer;transition:all .2s
+            ">↻ Spróbuj ponownie</button>
+            <a href="https://aplikacja.ceidg.gov.pl/ceidg/ceidg.public.ui/Search.aspx" target="_blank" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid var(--border);
+              background:var(--surface2);color:var(--text-dim);
+              cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px
+            ">↗ Sprawdź ręcznie na ceidg.gov.pl</a>
+          </div>
+          <div class="ceidg-note" style="margin-top:14px">
+            Możesz sprawdzić bezpośrednio: <a href="https://aplikacja.ceidg.gov.pl/ceidg/ceidg.public.ui/Search.aspx" target="_blank">aplikacja.ceidg.gov.pl</a>
+          </div>
+        </div>
+      </div>`;
+  }
+  // ── /CEIDG ───────────────────────────────────────────────────────────────
 
   function getCountryName(code) {
     const names = {
