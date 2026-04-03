@@ -51,9 +51,7 @@ def kreptd():
             sql = f'SELECT * FROM "{resource_id}" WHERE nip = \'{nip}\' LIMIT 20'
             resp = requests.get(
                 'https://dane.gov.pl/api/3/action/datastore_search_sql',
-                params={'sql': sql},
-                headers=headers,
-                timeout=20
+                params={'sql': sql}, headers=headers, timeout=20
             )
             print(f"[KREPTD] {resource_id} status={resp.status_code} body={resp.text[:300]}")
             resp.raise_for_status()
@@ -98,7 +96,9 @@ def bialalistava():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# CEIDG proxy - DIAGNOSTYKA DOSTEPU DO DOMENY
+# CEIDG proxy
+# Wg dokumentacji API v3: parametr nip jest TABLICA - trzeba uzyc nip[]=...
+# Endpoint: https://dane.biznes.gov.pl/api/ceidg/v3/firmy
 @app.route('/ceidg')
 def ceidg():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
@@ -110,54 +110,68 @@ def ceidg():
         'Accept': 'application/json',
     }
 
-    # Test 1: czy w ogole odpowiada root domeny (bez auth)
-    try:
-        r_root = requests.get('https://dane.biznes.gov.pl/', timeout=10)
-        root_status = r_root.status_code
-        root_body = r_root.text[:200]
-    except Exception as e:
-        root_status = f'ERROR: {e}'
-        root_body = ''
+    # Probujemy v3 i v2, oba z nip jako tablica (zgodnie z OpenAPI spec)
+    # requests automatycznie serializuje liste jako nip=val1&nip=val2
+    # ale API moze wymagac nip[]=val - uzywamy workaround przez params jako lista tupli
+    candidates = [
+        ('https://dane.biznes.gov.pl/api/ceidg/v3/firmy', [('nip', nip), ('limit', 10)]),
+        ('https://dane.biznes.gov.pl/api/ceidg/v2/firmy', [('nip', nip), ('limit', 10)]),
+        # Probuj tez jako nip[] (bracket notation)
+        ('https://dane.biznes.gov.pl/api/ceidg/v3/firmy', [('nip[]', nip), ('limit', 10)]),
+    ]
 
-    # Test 2: v2/firmy z NIP (z auth)
-    try:
-        r1 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/firmy',
-                          headers=auth_headers, params={'nip': nip}, timeout=15)
-        s1, b1 = r1.status_code, r1.text[:300]
-    except Exception as e:
-        s1, b1 = f'ERROR: {e}', ''
+    diag = []
+    best = None
 
-    # Test 3: v2/firmy BEZ auth
-    try:
-        r2 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/firmy',
-                          params={'nip': nip}, timeout=15)
-        s2, b2 = r2.status_code, r2.text[:300]
-    except Exception as e:
-        s2, b2 = f'ERROR: {e}', ''
+    for url, params in candidates:
+        try:
+            resp = requests.get(url, headers=auth_headers, params=params, timeout=15)
+            print(f"[CEIDG] {url} status={resp.status_code} body={resp.text[:400]}")
+            try:
+                body_json = resp.json()
+            except Exception:
+                body_json = None
 
-    # Test 4: v3/firmy z auth (najnowsze API)
-    try:
-        r3 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v3/firmy',
-                          headers=auth_headers, params={'nip': nip}, timeout=15)
-        s3, b3 = r3.status_code, r3.text[:300]
-    except Exception as e:
-        s3, b3 = f'ERROR: {e}', ''
+            entry = {
+                'url': url,
+                'params': dict(params),
+                'status': resp.status_code,
+                'body_raw': resp.text[:500],
+                'body_json': body_json,
+            }
+            diag.append(entry)
 
-    # Test 5: Swagger/OpenAPI spec
-    try:
-        r4 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/swagger.json',
-                          headers=auth_headers, timeout=10)
-        s4, b4 = r4.status_code, r4.text[:300]
-    except Exception as e:
-        s4, b4 = f'ERROR: {e}', ''
+            # Jesli status 200 i mamy firmy - to jest wynik
+            if resp.status_code == 200 and body_json:
+                firmy = body_json.get('firmy', [])
+                if firmy:
+                    best = firmy
+                    break
 
-    return jsonify({
-        'success': True, 'found': False, 'firmy': [], 'nip': nip,
-        '_diag': {
-            'root_domain': {'status': root_status, 'body': root_body},
-            'v2_firmy_with_auth': {'status': s1, 'body': b1},
-            'v2_firmy_no_auth':   {'status': s2, 'body': b2},
-            'v3_firmy_with_auth': {'status': s3, 'body': b3},
-            'v2_swagger':         {'status': s4, 'body': b4},
-        }
-    })
+            # 204 = brak wynikow (ale endpoint dziala)
+            if resp.status_code == 204:
+                best = []
+                break
+
+        except Exception as e:
+            diag.append({'url': url, 'params': dict(params), 'error': str(e)})
+
+    if best is not None and len(best) > 0:
+        return jsonify({
+            'success': True,
+            'found': True,
+            'firmy': best,
+            'nip': nip,
+            'source': 'dane.biznes.gov.pl',
+        })
+    elif best == []:
+        return jsonify({'success': True, 'found': False, 'firmy': [], 'nip': nip})
+    else:
+        # Zwroc diagnostyke jesli nic nie zadziałalo
+        return jsonify({
+            'success': True,
+            'found': False,
+            'firmy': [],
+            'nip': nip,
+            '_diag': diag,
+        })
