@@ -98,7 +98,7 @@ def bialalistava():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# CEIDG proxy - TRYB DIAGNOSTYCZNY (probuje rozne URL-e)
+# CEIDG proxy - DIAGNOSTYKA DOSTEPU DO DOMENY
 @app.route('/ceidg')
 def ceidg():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
@@ -110,37 +110,54 @@ def ceidg():
         'Accept': 'application/json',
     }
 
-    # Testujemy wszystkie mozliwe kombinacje URL i parametrow
-    candidates = [
-        ('https://dane.biznes.gov.pl/api/ceidg/v2/firma', {'nip': nip, 'limit': 10}),
-        ('https://dane.biznes.gov.pl/api/ceidg/v2/firma', {'nip': nip}),
-        ('https://dane.biznes.gov.pl/api/ceidg/v1/firma', {'nip': nip}),
-        ('https://dane.biznes.gov.pl/api/ceidg/v1/firmy', {'nip': nip}),
-    ]
+    # Test 1: czy w ogole odpowiada root domeny (bez auth)
+    try:
+        r_root = requests.get('https://dane.biznes.gov.pl/', timeout=10)
+        root_status = r_root.status_code
+        root_body = r_root.text[:200]
+    except Exception as e:
+        root_status = f'ERROR: {e}'
+        root_body = ''
 
-    results = []
-    for url, params in candidates:
-        try:
-            resp = requests.get(url, headers=auth_headers, params=params, timeout=15)
-            try:
-                body_json = resp.json()
-            except Exception:
-                body_json = None
-            results.append({
-                'url': url,
-                'params': params,
-                'status': resp.status_code,
-                'body_raw': resp.text[:500],
-                'body_json': body_json,
-            })
-            print(f"[CEIDG] {url} params={params} status={resp.status_code} body={resp.text[:300]}")
-        except Exception as e:
-            results.append({'url': url, 'params': params, 'error': str(e)})
+    # Test 2: v2/firmy z NIP (z auth)
+    try:
+        r1 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/firmy',
+                          headers=auth_headers, params={'nip': nip}, timeout=15)
+        s1, b1 = r1.status_code, r1.text[:300]
+    except Exception as e:
+        s1, b1 = f'ERROR: {e}', ''
+
+    # Test 3: v2/firmy BEZ auth
+    try:
+        r2 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/firmy',
+                          params={'nip': nip}, timeout=15)
+        s2, b2 = r2.status_code, r2.text[:300]
+    except Exception as e:
+        s2, b2 = f'ERROR: {e}', ''
+
+    # Test 4: v3/firmy z auth (najnowsze API)
+    try:
+        r3 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v3/firmy',
+                          headers=auth_headers, params={'nip': nip}, timeout=15)
+        s3, b3 = r3.status_code, r3.text[:300]
+    except Exception as e:
+        s3, b3 = f'ERROR: {e}', ''
+
+    # Test 5: Swagger/OpenAPI spec
+    try:
+        r4 = requests.get('https://dane.biznes.gov.pl/api/ceidg/v2/swagger.json',
+                          headers=auth_headers, timeout=10)
+        s4, b4 = r4.status_code, r4.text[:300]
+    except Exception as e:
+        s4, b4 = f'ERROR: {e}', ''
 
     return jsonify({
-        'success': True,
-        'found': False,
-        'firmy': [],
-        'nip': nip,
-        '_diag': results,
+        'success': True, 'found': False, 'firmy': [], 'nip': nip,
+        '_diag': {
+            'root_domain': {'status': root_status, 'body': root_body},
+            'v2_firmy_with_auth': {'status': s1, 'body': b1},
+            'v2_firmy_no_auth':   {'status': s2, 'body': b2},
+            'v3_firmy_with_auth': {'status': s3, 'body': b3},
+            'v2_swagger':         {'status': s4, 'body': b4},
+        }
     })
