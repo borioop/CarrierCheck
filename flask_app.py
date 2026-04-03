@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 import requests
 import os
-import json
 
 app = Flask(__name__)
 
@@ -17,7 +16,7 @@ def vies():
     country = request.args.get('country', '').upper().strip()
     vat = request.args.get('vat', '').strip()
     if not country or not vat:
-        return jsonify({'error': 'Brak parametrów country lub vat'}), 400
+        return jsonify({'error': 'Brak parametrow country lub vat'}), 400
     url = f'https://ec.europa.eu/taxation_customs/vies/rest-api/ms/{country}/vat/{vat}'
     try:
         resp = requests.get(url, headers={'Accept': 'application/json'}, timeout=15)
@@ -34,7 +33,7 @@ def vies():
 def kreptd():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
-        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP'}), 400
+        return jsonify({'success': False, 'error': 'Nieprawidlowy NIP'}), 400
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
@@ -75,7 +74,7 @@ def kreptd():
 def bialalistava():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
-        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+        return jsonify({'success': False, 'error': 'Nieprawidlowy NIP (wymagane 10 cyfr)'}), 400
     url = f'https://wl-api.mf.gov.pl/api/search/nip/{nip}'
     params = {'date': __import__('datetime').date.today().isoformat()}
     try:
@@ -93,52 +92,55 @@ def bialalistava():
             'source': 'wl-api.mf.gov.pl'
         })
     except requests.exceptions.Timeout:
-        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API MF niedostępne)'}), 504
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API MF niedostepne)'}), 504
     except requests.exceptions.HTTPError as e:
         return jsonify({'success': False, 'error': f'Blad HTTP: {str(e)}'}), 502
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# CEIDG proxy - TRYB DIAGNOSTYCZNY
+# CEIDG proxy - TRYB DIAGNOSTYCZNY (probuje rozne URL-e)
 @app.route('/ceidg')
 def ceidg():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
     if not nip or len(nip) != 10 or not nip.isdigit():
         return jsonify({'success': False, 'error': 'Nieprawidlowy NIP (wymagane 10 cyfr)'}), 400
 
-    url = 'https://dane.biznes.gov.pl/api/ceidg/v2/firmy'
-    headers = {
+    auth_headers = {
         'Authorization': 'Bearer ' + CEIDG_API_KEY,
         'Accept': 'application/json',
     }
-    params = {'nip': nip, 'limit': 10}
 
-    try:
-        resp = requests.get(url, headers=headers, params=params, timeout=20)
-        raw_body = resp.text
-        print(f"[CEIDG] NIP={nip} status={resp.status_code} body={raw_body[:800]}")
+    # Testujemy wszystkie mozliwe kombinacje URL i parametrow
+    candidates = [
+        ('https://dane.biznes.gov.pl/api/ceidg/v2/firma', {'nip': nip, 'limit': 10}),
+        ('https://dane.biznes.gov.pl/api/ceidg/v2/firma', {'nip': nip}),
+        ('https://dane.biznes.gov.pl/api/ceidg/v1/firma', {'nip': nip}),
+        ('https://dane.biznes.gov.pl/api/ceidg/v1/firmy', {'nip': nip}),
+    ]
 
+    results = []
+    for url, params in candidates:
         try:
-            raw_json = resp.json()
-        except Exception:
-            raw_json = None
+            resp = requests.get(url, headers=auth_headers, params=params, timeout=15)
+            try:
+                body_json = resp.json()
+            except Exception:
+                body_json = None
+            results.append({
+                'url': url,
+                'params': params,
+                'status': resp.status_code,
+                'body_raw': resp.text[:500],
+                'body_json': body_json,
+            })
+            print(f"[CEIDG] {url} params={params} status={resp.status_code} body={resp.text[:300]}")
+        except Exception as e:
+            results.append({'url': url, 'params': params, 'error': str(e)})
 
-        # TRYB DIAGNOSTYCZNY - zwroc surowe dane zeby zobaczyc strukture
-        return jsonify({
-            'success': True,
-            'found': False,
-            'firmy': [],
-            'nip': nip,
-            '_diag': {
-                'http_status': resp.status_code,
-                'body_raw': raw_body[:2000],
-                'body_json': raw_json,
-                'url_called': url,
-                'params_sent': params,
-            }
-        })
-
-    except requests.exceptions.Timeout:
-        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania'}), 504
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    return jsonify({
+        'success': True,
+        'found': False,
+        'firmy': [],
+        'nip': nip,
+        '_diag': results,
+    })
