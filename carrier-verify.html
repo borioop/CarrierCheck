@@ -2718,43 +2718,82 @@
 
   function renderKrs(nip, json) {
     const container = document.getElementById('krsContainer');
-    const d = json.odpis || {};
-    const nagl = d.naglowekA || d.naglowekP || {};
-    const dane = d.dzial1 || d.dane || {};
 
-    // Wyciągnij kluczowe pola z odpowiedzi KRS (struktura różni się wg formy prawnej)
-    const nazwa    = nagl.nazwa || d.firma || d.nazwaFirmy || json.nazwa || '—';
-    const krsNr    = json.krs || nagl.numerKRS || '—';
-    const regon    = nagl.numerREGON || json.regon || '—';
-    const nipVal   = nagl.nip || nip;
-    const formaPr  = nagl.formaPrawna || d.formaPrawna || json.formaPrawna || '—';
-    const statusR  = nagl.statusPodmiotu || nagl.czyAktywny || json.status || '';
-    const dataRej  = formatDate(nagl.dataRejestracjiWKRS || nagl.dataWpisu || json.dataRejestracji);
-    const siedziba = nagl.siedziba || nagl.miejscowosc || '—';
-    const adresStr = (() => {
-      const a = d.adres || d.siedziba || {};
-      const parts = [a.ulica, a.nrDomu, a.kodPocztowy, a.miejscowosc].filter(Boolean);
-      return parts.length ? parts.join(' ') : siedziba;
-    })();
+    // Rzeczywista struktura API KRS: json.odpis.odpis.dane.dzial1.*
+    const odpisRoot  = (json.odpis || {}).odpis || json.odpis || {};
+    const daneRoot   = odpisRoot.dane || odpisRoot;
+    const dzial1     = daneRoot.dzial1 || {};
+    const podmiot    = dzial1.danePodmiotu || {};
+    const identyf    = podmiot.identyfikatory || {};
+    const siedzibaD  = dzial1.siedzibaIAdres || {};
+    const adresObj   = siedzibaD.adres || {};
+    const siedzibaObj= siedzibaD.siedziba || {};
+    const kapital    = dzial1.kapital || {};
+    const dzial2     = daneRoot.dzial2 || {};
+    // Zarząd może być w dzial2 lub dzial3
+    const dzial3     = daneRoot.dzial3 || {};
+    const organyRaw  = dzial2.organyPodmiotu || dzial3.organyPodmiotu || [];
 
-    // Zarząd / reprezentacja
-    const zarzad = (d.zarzad || d.osobyReprezentujace || d.czlonkowieZarzadu || []);
-    const zarzadHtml = zarzad.length ? `
+    // Wyciągnij kluczowe pola
+    const nazwa    = podmiot.nazwa   || json.nazwa   || '—';
+    const krsNr    = json.krs        || '—';
+    const regon    = identyf.regon   || '—';
+    const nipVal   = identyf.nip     || nip;
+    const formaPr  = podmiot.formaPrawna || '—';
+
+    // Adres siedziby
+    const adresParts = [
+      adresObj.ulica,
+      adresObj.nrDomu,
+      adresObj.kodPocztowy,
+      adresObj.miejscowosc || siedzibaObj.miejscowosc
+    ].filter(Boolean);
+    const adresStr = adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || '—');
+
+    // Kapital zakładowy
+    const kapitalWart = (kapital.wysokoscKapitaluZakladowego || {}).wartosc;
+    const kapitalWal  = (kapital.wysokoscKapitaluZakladowego || {}).waluta || 'PLN';
+    const kapitalStr  = kapitalWart ? `${Number(kapitalWart.replace(',','.').replace(' ','')).toLocaleString('pl-PL')} ${kapitalWal}` : null;
+
+    // Zarząd — iteruj organy, szukaj zarządu
+    let czlonkowie = [];
+    if (Array.isArray(organyRaw)) {
+      organyRaw.forEach(organ => {
+        const osoby = organ.czlonkowie || organ.osoby || [];
+        if (Array.isArray(osoby)) czlonkowie = czlonkowie.concat(osoby);
+      });
+    }
+    // Fallback — sprawdź dzial2 wprost
+    if (!czlonkowie.length) {
+      const zarz = dzial2.zarzad || dzial2.wspolnicy || [];
+      if (Array.isArray(zarz)) czlonkowie = zarz;
+    }
+
+    const zarzadHtml = czlonkowie.length ? `
       <div class="krs-section-title">👔 Zarząd / Reprezentacja</div>
       <div class="krs-person-list">
-        ${zarzad.slice(0, 8).map(os => {
-          const imie = os.imie || os.imiona || '';
-          const nazw = os.nazwisko || '';
-          const funk = os.funkcja || os.rola || '';
-          return `<div class="krs-person">${[imie, nazw].filter(Boolean).join(' ')}${funk ? ' · <em>' + funk + '</em>' : ''}</div>`;
+        ${czlonkowie.slice(0, 10).map(os => {
+          const osobaDane = os.osobaFizyczna || os.osobaPrawna || os;
+          const imie = osobaDane.imiona || osobaDane.imie || '';
+          const nazw = osobaDane.nazwisko || '';
+          const funk = os.funkcja || os.rola || osobaDane.funkcja || '';
+          const label = [imie, nazw].filter(Boolean).join(' ') || JSON.stringify(os).substring(0,40);
+          return `<div class="krs-person">${label}${funk ? ' · <em>' + funk + '</em>' : ''}</div>`;
         }).join('')}
       </div>` : '';
 
-    // Status barwa
-    const isActive = !statusR || statusR.toLowerCase().includes('aktywn') || statusR === 'true' || statusR === true;
-    const headerCls = isActive ? 'ok-header' : 'err-header';
-    const pillCls   = isActive ? 'ok' : 'error';
-    const pillTxt   = isActive ? 'Aktywny w KRS' : (statusR || 'Nieaktywny');
+    // Poprzedni rejestr
+    const poprzedni = podmiot.daneOWczesniejszejRejestracji;
+    const poprzedniHtml = poprzedni ? `
+      <div class="krs-field">
+        <span class="krs-field-label">Poprzedni rejestr</span>
+        <span class="krs-field-value" style="font-size:11px">${poprzedni.nazwaPoprzedniegoRejestru || ''} nr ${poprzedni.numerWPoprzednimRejestrze || ''}</span>
+      </div>` : '';
+
+    // KRS API nie zwraca explicite statusu aktywności w OdpisAktualny — jeśli odpis istnieje, podmiot jest aktywny
+    const headerCls = 'ok-header';
+    const pillCls   = 'ok';
+    const pillTxt   = 'Aktywny w KRS';
 
     container.innerHTML = `
       <div class="krs-card">
@@ -2793,10 +2832,11 @@
               <span class="krs-field-label">Forma prawna</span>
               <span class="krs-field-value">${formaPr}</span>
             </div>
-            <div class="krs-field">
-              <span class="krs-field-label">Data rejestracji</span>
-              <span class="krs-field-value">${dataRej}</span>
-            </div>
+            ${kapitalStr ? `<div class="krs-field">
+              <span class="krs-field-label">Kapitał zakładowy</span>
+              <span class="krs-field-value">${kapitalStr}</span>
+            </div>` : ''}
+            ${poprzedniHtml}
             <div class="krs-field" style="grid-column:1/-1">
               <span class="krs-field-label">Adres siedziby</span>
               <span class="krs-field-value">${adresStr}</span>
