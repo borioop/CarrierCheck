@@ -1606,8 +1606,7 @@
   <div id="resultContainer"></div>
   <div id="kreptdContainer"></div>
   <div id="bialalistaContainer"></div>
-  <div id="ceidgContainer"></div>
-  <div id="krsContainer"></div>
+  <div id="registryContainer"></div>
 
   <div class="info-strip">
     <div class="info-item"><span class="info-dot"></span> Dane z systemu VIES (Komisja Europejska)</div>
@@ -1669,8 +1668,7 @@
     document.getElementById('resultContainer').innerHTML = '';
     document.getElementById('kreptdContainer').innerHTML = '';
     document.getElementById('bialalistaContainer').innerHTML = '';
-    document.getElementById('ceidgContainer').innerHTML = '';
-    document.getElementById('krsContainer').innerHTML = '';
+    document.getElementById('registryContainer').innerHTML = '';
 
     // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
     const BACKEND = 'https://carriercheck-backend.onrender.com';
@@ -1697,8 +1695,7 @@
       if (countryCode === 'PL') {
         checkKreptd(vatNumber);
         checkBialaLista(vatNumber);
-        checkCeidg(vatNumber);
-        checkKrs(vatNumber);
+        checkRegistry(vatNumber);
       }
 
     } catch (err) {
@@ -2392,149 +2389,190 @@
   }
   // ── /Biała Lista VAT ──────────────────────────────────────────────────────
 
-  // ── CEIDG ──────────────────────────────────────────────────────────────────
-  // Token JWT jest przechowywany wyłącznie na serwerze (flask_app.py).
-  // Przeglądarka odpytuje tylko /ceidg na własnym backendzie.
+  // ── CEIDG / KRS — połączona sekcja ────────────────────────────────────────
+  // KRS i CEIDG są odpytywane równolegle. Wynik: KRS → CEIDG → nie znaleziono.
 
-  async function checkCeidg(nip) {
-    const container = document.getElementById('ceidgContainer');
+  async function checkRegistry(nip) {
+    const container = document.getElementById('registryContainer');
     if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
+    const BACKEND = 'https://carriercheck-backend.onrender.com';
 
     container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">🏛</div>
+      <div class="krs-card">
+        <div class="krs-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">🏛</div>
             <div>
-              <div class="ceidg-label">CEIDG</div>
-              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej (Biznes.gov.pl)</div>
+              <div class="krs-label">CEIDG / KRS</div>
+              <div class="krs-sublabel">Rejestr działalności gospodarczej i Krajowy Rejestr Sądowy</div>
             </div>
           </div>
           <div class="header-right">
-          <div class="ceidg-status-pill info">Sprawdzam…</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-loading">
-          <div class="ceidg-loading-inner">
-            <div class="ceidg-spinner"></div>
-            Pobieranie danych z dane.biznes.gov.pl…
+            <div class="krs-status-pill info">Sprawdzam…</div>
+            <span class="collapse-chevron collapsed">▾</span>
           </div>
         </div>
-      </div></div>`;
+        <div class="collapsible-body collapsed"><div class="krs-loading">
+          <div class="krs-loading-inner">
+            <div class="krs-spinner"></div>
+            Sprawdzanie KRS i CEIDG…
+          </div>
+        </div></div>
+      </div>`;
 
-    const BACKEND = 'https://carriercheck-backend.onrender.com';
+    let krsJson = null, ceidgJson = null, krsErr = null, ceidgErr = null;
+    const [krsResult, ceidgResult] = await Promise.allSettled([
+      fetch(`${BACKEND}/krs?nip=${encodeURIComponent(nip)}`, { signal: AbortSignal.timeout(25000) })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+      fetch(`${BACKEND}/ceidg?nip=${encodeURIComponent(nip)}`, { signal: AbortSignal.timeout(25000) })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+    ]);
+    if (krsResult.status === 'fulfilled')  krsJson  = krsResult.value;
+    else krsErr = krsResult.reason?.message || 'Błąd';
+    if (ceidgResult.status === 'fulfilled') ceidgJson = ceidgResult.value;
+    else ceidgErr = ceidgResult.reason?.message || 'Błąd';
 
-    try {
-      const resp = await fetch(`${BACKEND}/ceidg?nip=${nip}`, {
-        signal: AbortSignal.timeout(25000)
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Nieznany błąd');
-      if (!json.found || !json.firma) { renderCeidgNotFound(nip); return; }
-      renderCeidg(nip, json.firma);
-    } catch (err) {
-      renderCeidgError(nip, err.message);
-    }
+    const krsFound   = krsJson?.success  && krsJson?.found;
+    const ceidgFound = ceidgJson?.success && ceidgJson?.found && ceidgJson?.firma;
+
+    if (krsFound)        renderRegistryKrs(nip, krsJson, ceidgJson);
+    else if (ceidgFound) renderRegistryCeidg(nip, ceidgJson.firma, krsJson);
+    else                 renderRegistryNotFound(nip, krsErr, ceidgErr);
   }
 
-  function ceidgStatusLabel(status) {
-    const map = {
-      'AKTYWNY': { text: 'Aktywny', cls: 'ok', valcls: 'ceidg-status-aktywny' },
-      'WYKRESLONY': { text: 'Wykreślony', cls: 'error', valcls: 'ceidg-status-wykreslony' },
-      'ZAWIESZONY': { text: 'Zawieszony', cls: 'warn', valcls: 'ceidg-status-zawieszony' },
-      'OCZEKUJE_NA_ROZPOCZECIE_DZIALANOSCI': { text: 'Oczekuje na start', cls: 'warn', valcls: '' },
-      'WYLACZNIE_W_FORMIE_SPOLKI': { text: 'Tylko jako spółka', cls: 'warn', valcls: '' },
-    };
-    return map[status] || { text: status || '—', cls: 'info', valcls: '' };
+  function renderRegistryKrs(nip, json, ceidgJson) {
+    const container = document.getElementById('registryContainer');
+    const odpisRoot = (json.odpis || {}).odpis || json.odpis || {};
+    const daneRoot  = odpisRoot.dane || odpisRoot;
+    const dzial1    = daneRoot.dzial1 || {};
+    const podmiot   = dzial1.danePodmiotu || {};
+    const identyf   = podmiot.identyfikatory || {};
+    const siedzibaD = dzial1.siedzibaIAdres || {};
+    const adresObj  = siedzibaD.adres || {};
+    const siedzibaObj = siedzibaD.siedziba || {};
+    const kapital   = dzial1.kapital || {};
+    const dzial2    = daneRoot.dzial2 || {};
+    const dzial3    = daneRoot.dzial3 || {};
+    const organyRaw = dzial2.organyPodmiotu || dzial3.organyPodmiotu || [];
+    const nazwa   = podmiot.nazwa  || json.nazwa  || '—';
+    const krsNr   = json.krs || '—';
+    const regon   = identyf.regon  || '—';
+    const nipVal  = identyf.nip    || nip;
+    const formaPr = podmiot.formaPrawna || '—';
+    const adresParts = [adresObj.ulica, adresObj.nrDomu, adresObj.kodPocztowy, adresObj.miejscowosc || siedzibaObj.miejscowosc].filter(Boolean);
+    const adresStr = adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || '—');
+    const kapitalWart = (kapital.wysokoscKapitaluZakladowego || {}).wartosc;
+    const kapitalWal  = (kapital.wysokoscKapitaluZakladowego || {}).waluta || 'PLN';
+    const kapitalStr  = kapitalWart ? `${Number(kapitalWart.replace(',','.').replace(' ','')).toLocaleString('pl-PL')} ${kapitalWal}` : null;
+    let czlonkowie = [];
+    if (Array.isArray(organyRaw)) organyRaw.forEach(organ => { const os = organ.czlonkowie || organ.osoby || []; if (Array.isArray(os)) czlonkowie = czlonkowie.concat(os); });
+    if (!czlonkowie.length) { const z = dzial2.zarzad || dzial2.wspolnicy || []; if (Array.isArray(z)) czlonkowie = z; }
+    const zarzadHtml = czlonkowie.length ? `<div class="krs-section-title">👔 Zarząd / Reprezentacja</div><div class="krs-person-list">${czlonkowie.slice(0,10).map(os => { const d = os.osobaFizyczna || os.osobaPrawna || os; const label = [[d.imiona||d.imie,'',d.nazwisko].join(' ').trim()].filter(Boolean).join('') || JSON.stringify(os).substring(0,40); const funk = os.funkcja || os.rola || d.funkcja || ''; return `<div class="krs-person">${label}${funk?' · <em>'+funk+'</em>':''}</div>`; }).join('')}</div>` : '';
+    const poprzedni = podmiot.daneOWczesniejszejRejestracji;
+    const poprzedniHtml = poprzedni ? `<div class="krs-field"><span class="krs-field-label">Poprzedni rejestr</span><span class="krs-field-value" style="font-size:11px">${poprzedni.nazwaPoprzedniegoRejestru||''} nr ${poprzedni.numerWPoprzednimRejestrze||''}</span></div>` : '';
+    container.innerHTML = `
+      <div class="krs-card">
+        <div class="krs-header ok-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">⚖️</div>
+            <div>
+              <div class="krs-label">CEIDG / KRS</div>
+              <div class="krs-sublabel">Znaleziono w KRS · Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="krs-status-pill ok">Aktywny · KRS</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="krs-body">
+          <div class="krs-grid">
+            <div class="krs-field" style="grid-column:1/-1"><span class="krs-field-label">Nazwa / Firma</span><span class="krs-field-value orange">${nazwa}</span></div>
+            <div class="krs-field"><span class="krs-field-label">Numer KRS</span><span class="krs-field-value">${krsNr}</span></div>
+            <div class="krs-field"><span class="krs-field-label">NIP</span><span class="krs-field-value">${nipVal}</span></div>
+            <div class="krs-field"><span class="krs-field-label">REGON</span><span class="krs-field-value ${regon==='—'?'empty':''}">${regon}</span></div>
+            <div class="krs-field"><span class="krs-field-label">Forma prawna</span><span class="krs-field-value">${formaPr}</span></div>
+            ${kapitalStr?`<div class="krs-field"><span class="krs-field-label">Kapitał zakładowy</span><span class="krs-field-value">${kapitalStr}</span></div>`:''}
+            ${poprzedniHtml}
+            <div class="krs-field" style="grid-column:1/-1"><span class="krs-field-label">Adres siedziby</span><span class="krs-field-value">${adresStr}</span></div>
+          </div>
+          ${zarzadHtml}
+          <div class="kreptd-check-row" style="margin-top:12px">
+            <div class="check-indicator info">i</div>
+            <div class="check-content">
+              <div class="check-name">CEIDG — nie dotyczy</div>
+              <div class="check-detail">Podmiot jest spółką zarejestrowaną w KRS. CEIDG dotyczy wyłącznie jednoosobowej działalności gospodarczej.</div>
+            </div>
+          </div>
+          <div class="krs-note" style="margin-top:16px">Źródło: <a href="https://api-krs.ms.gov.pl" target="_blank">api-krs.ms.gov.pl</a> · Pełna weryfikacja: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a></div>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe KRS (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json, null, 2)}</pre>
+          </div>
+        </div></div>
+      </div>`;
   }
 
-  function renderCeidg(nip, f) {
-    const container = document.getElementById('ceidgContainer');
+  function renderRegistryCeidg(nip, f, krsJson) {
+    const container = document.getElementById('registryContainer');
     const st = ceidgStatusLabel(f.status);
-
     const adres = f.adresDzialalnosci || {};
-    const adresStr = [adres.ulica, adres.budynek ? `${adres.budynek}${adres.lokal ? '/'+adres.lokal : ''}` : '', adres.kod, adres.miasto]
-      .filter(Boolean).join(' ') || '—';
-
+    const adresStr = [adres.ulica, adres.budynek?`${adres.budynek}${adres.lokal?'/'+adres.lokal:''}`:'' , adres.kod, adres.miasto].filter(Boolean).join(' ') || '—';
     const wl = f.wlasciciel || {};
     const nazwaPelna = f.nazwa || [wl.imie, wl.nazwisko].filter(Boolean).join(' ') || '—';
-
-    const dataRozp = f.dataRozpoczecia ? formatDate(f.dataRozpoczecia) : '—';
-    const dataZaw  = f.dataZawieszenia ? formatDate(f.dataZawieszenia) : null;
-    const dataWykr = f.dataWykreslenia ? formatDate(f.dataWykreslenia) : null;
-    const dataWznow = f.dataWznowienia ? formatDate(f.dataWznowienia) : null;
-
+    const dataRozp  = f.dataRozpoczecia ? formatDate(f.dataRozpoczecia) : '—';
+    const dataZaw   = f.dataZawieszenia ? formatDate(f.dataZawieszenia) : null;
+    const dataWykr  = f.dataWykreslenia ? formatDate(f.dataWykreslenia) : null;
+    const dataWznow = f.dataWznowienia  ? formatDate(f.dataWznowienia)  : null;
     const pkdMain = f.pkdGlowny ? f.pkdGlowny.kod : null;
     const pkdAll  = (f.pkd || []).filter((p,i,a) => a.findIndex(x=>x.kod===p.kod)===i);
-
-    const pkdHtml = pkdAll.length > 0 ? `
-      <div class="ceidg-section-title">📋 Kody PKD</div>
-      <div class="ceidg-pkd-list">
-        ${pkdAll.map(p => `<span class="ceidg-pkd-badge${p.kod === pkdMain ? ' main' : ''}" title="${p.nazwa || ''}">${p.kod}${p.kod === pkdMain ? ' ★' : ''}</span>`).join('')}
-      </div>` : '';
-
+    const pkdHtml = pkdAll.length > 0 ? `<div class="ceidg-section-title">📋 Kody PKD</div><div class="ceidg-pkd-list">${pkdAll.map(p=>`<span class="ceidg-pkd-badge${p.kod===pkdMain?' main':''}" title="${p.nazwa||''}">${p.kod}${p.kod===pkdMain?' ★':''}</span>`).join('')}</div>` : '';
     const extraRows = [
       dataZaw  ? `<div class="ceidg-field"><span class="ceidg-field-label">Data zawieszenia</span><span class="ceidg-field-value" style="color:var(--warn)">${dataZaw}</span></div>` : '',
       dataWykr ? `<div class="ceidg-field"><span class="ceidg-field-label">Data wykreślenia</span><span class="ceidg-field-value" style="color:var(--danger)">${dataWykr}</span></div>` : '',
       dataWznow? `<div class="ceidg-field"><span class="ceidg-field-label">Data wznowienia</span><span class="ceidg-field-value">${dataWznow}</span></div>` : '',
     ].join('');
-
-    const headerClass = st.cls === 'ok' ? 'ok-header' : st.cls === 'error' ? 'err-header' : '';
-
+    const overallCls    = st.cls === 'ok' ? 'ok' : st.cls === 'error' ? 'error' : 'warn';
+    const overallHeader = st.cls === 'ok' ? 'ok-header' : st.cls === 'error' ? 'err-header' : '';
+    const pillText      = st.cls === 'ok' ? 'Aktywny · CEIDG' : `${st.text} · CEIDG`;
     container.innerHTML = `
       <div class="ceidg-card">
-        <div class="ceidg-header ${headerClass} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+        <div class="ceidg-header ${overallHeader} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
           <div class="ceidg-title-row">
             <div class="ceidg-logo">🏛</div>
             <div>
-              <div class="ceidg-label">CEIDG</div>
-              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+              <div class="ceidg-label">CEIDG / KRS</div>
+              <div class="ceidg-sublabel">Znaleziono w CEIDG · Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
           <div class="header-right">
-          <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
+            <div class="ceidg-status-pill ${overallCls}">${pillText}</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
-          <div class="ceidg-section-title">🏢 Dane przedsiębiorcy</div>
+          <div class="ceidg-section-title">🏢 Dane przedsiębiorcy (JDG)</div>
           <div class="ceidg-grid">
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Nazwa / Firma</span>
-              <span class="ceidg-field-value cblue">${nazwaPelna}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">NIP</span>
-              <span class="ceidg-field-value">${wl.nip || nip}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">REGON</span>
-              <span class="ceidg-field-value ${wl.regon ? '' : 'empty'}">${wl.regon || 'Brak'}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Status działalności</span>
-              <span class="ceidg-field-value ${st.valcls}">${st.text}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Data rozpoczęcia</span>
-              <span class="ceidg-field-value">${dataRozp}</span>
-            </div>
+            <div class="ceidg-field" style="grid-column:1/-1"><span class="ceidg-field-label">Nazwa / Firma</span><span class="ceidg-field-value cblue">${nazwaPelna}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">NIP</span><span class="ceidg-field-value">${wl.nip||nip}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">REGON</span><span class="ceidg-field-value ${wl.regon?'':'empty'}">${wl.regon||'Brak'}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">Status działalności</span><span class="ceidg-field-value ${st.valcls}">${st.text}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">Data rozpoczęcia</span><span class="ceidg-field-value">${dataRozp}</span></div>
             ${extraRows}
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Adres działalności</span>
-              <span class="ceidg-field-value">${adresStr}</span>
-            </div>
-            ${f.email ? `<div class="ceidg-field"><span class="ceidg-field-label">E-mail</span><span class="ceidg-field-value">${f.email}</span></div>` : ''}
-            ${f.telefon ? `<div class="ceidg-field"><span class="ceidg-field-label">Telefon</span><span class="ceidg-field-value">${f.telefon}</span></div>` : ''}
-            ${f.www ? `<div class="ceidg-field"><span class="ceidg-field-label">Strona WWW</span><span class="ceidg-field-value">${f.www}</span></div>` : ''}
+            <div class="ceidg-field" style="grid-column:1/-1"><span class="ceidg-field-label">Adres działalności</span><span class="ceidg-field-value">${adresStr}</span></div>
+            ${f.email  ?`<div class="ceidg-field"><span class="ceidg-field-label">E-mail</span><span class="ceidg-field-value">${f.email}</span></div>`:''}
+            ${f.telefon?`<div class="ceidg-field"><span class="ceidg-field-label">Telefon</span><span class="ceidg-field-value">${f.telefon}</span></div>`:''}
+            ${f.www    ?`<div class="ceidg-field"><span class="ceidg-field-label">Strona WWW</span><span class="ceidg-field-value">${f.www}</span></div>`:''}
           </div>
           ${pkdHtml}
-          <div class="ceidg-note" style="margin-top:16px">
-            Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (Ministerstwo Rozwoju i Technologii).
-            Pełna weryfikacja: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl</a>
+          <div class="kreptd-check-row" style="margin-top:12px">
+            <div class="check-indicator info">i</div>
+            <div class="check-content">
+              <div class="check-name">KRS — nie dotyczy</div>
+              <div class="check-detail">Podmiot to jednoosobowa działalność gospodarcza — nie podlega rejestracji w KRS. KRS dotyczy spółek.</div>
+            </div>
           </div>
+          <div class="ceidg-note" style="margin-top:16px">Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (MRiT) · Pełna weryfikacja: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl</a></div>
           <div class="raw-section" style="margin-top:12px">
             <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe CEIDG (JSON)</button>
             <pre class="raw-data">${JSON.stringify(f, null, 2)}</pre>
@@ -2543,112 +2581,50 @@
       </div></div>`;
   }
 
-  function renderCeidgFromList(nip, f) {
-    // Uproszczony widok gdy mamy tylko dane z /firmy (bez pełnych szczegółów)
-    const container = document.getElementById('ceidgContainer');
-    const adres = f.adresDzialalnosci || {};
-    const adresStr = [adres.ulica, adres.budynek, adres.kod, adres.miasto].filter(Boolean).join(' ') || '—';
-    const wl = f.wlasciciel || {};
-    const st = ceidgStatusLabel(f.status);
-    const headerClass = st.cls === 'ok' ? 'ok-header' : st.cls === 'error' ? 'err-header' : '';
+  function renderRegistryNotFound(nip, krsErr, ceidgErr) {
+    const container = document.getElementById('registryContainer');
+    const krsMsg  = krsErr   ? `Błąd API KRS: ${krsErr}`   : 'Nie znaleziono w KRS';
+    const ceidgMsg= ceidgErr ? `Błąd API CEIDG: ${ceidgErr}`: 'Nie znaleziono w CEIDG';
     container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header ${headerClass} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">🏛</div>
+      <div class="krs-card">
+        <div class="krs-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">🏛</div>
             <div>
-              <div class="ceidg-label">CEIDG</div>
-              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
+              <div class="krs-label">CEIDG / KRS</div>
+              <div class="krs-sublabel">Rejestr działalności gospodarczej i Krajowy Rejestr Sądowy</div>
             </div>
           </div>
           <div class="header-right">
-          <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
-          <div class="ceidg-grid">
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Nazwa</span>
-              <span class="ceidg-field-value cblue">${f.nazwa || '—'}</span>
-            </div>
-            <div class="ceidg-field"><span class="ceidg-field-label">NIP</span><span class="ceidg-field-value">${wl.nip || nip}</span></div>
-            <div class="ceidg-field"><span class="ceidg-field-label">REGON</span><span class="ceidg-field-value">${wl.regon || '—'}</span></div>
-            <div class="ceidg-field"><span class="ceidg-field-label">Status</span><span class="ceidg-field-value ${st.valcls}">${st.text}</span></div>
-            <div class="ceidg-field"><span class="ceidg-field-label">Data rozpoczęcia</span><span class="ceidg-field-value">${formatDate(f.dataRozpoczecia)}</span></div>
-            <div class="ceidg-field" style="grid-column:1/-1"><span class="ceidg-field-label">Adres</span><span class="ceidg-field-value">${adresStr}</span></div>
+            <div class="krs-status-pill error">Nieaktywny / Nie znaleziono</div>
+            <span class="collapse-chevron collapsed">▾</span>
           </div>
-          <div class="ceidg-note">Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (MRiT)</div>
         </div>
-      </div></div>`;
-  }
-
-  function renderCeidgNotFound(nip) {
-    const container = document.getElementById('ceidgContainer');
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">🏛</div>
-            <div>
-              <div class="ceidg-label">CEIDG</div>
-              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill error">Nie znaleziono</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
+        <div class="collapsible-body collapsed"><div class="krs-body">
           <div class="kreptd-check-row">
             <div class="check-indicator fail">✗</div>
             <div class="check-content">
-              <div class="check-name">NIP ${nip} nie figuruje w CEIDG</div>
-              <div class="check-detail">Podmiot nie jest wpisany do Centralnej Ewidencji i Informacji o Działalności Gospodarczej lub dane są niedostępne.</div>
+              <div class="check-name">KRS — ${krsMsg}</div>
+              <div class="check-detail">Podmiot nie figuruje w Krajowym Rejestrze Sądowym.</div>
             </div>
           </div>
-          <div class="ceidg-note">Sprawdź bezpośrednio: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl/wyszukiwarka-firm</a></div>
-        </div>
-      </div></div>`;
-  }
-
-  function renderCeidgError(nip, errMsg) {
-    const container = document.getElementById('ceidgContainer');
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">🏛</div>
-            <div>
-              <div class="ceidg-label">CEIDG</div>
-              <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill error">Niedostępne</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
-            <div class="check-indicator fail">!</div>
+            <div class="check-indicator fail">✗</div>
             <div class="check-content">
-              <div class="check-name">Nie udało się pobrać danych CEIDG</div>
-              <div class="check-detail">API CEIDG tymczasowo niedostępne lub token wygasł.<br>
-                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
-              </div>
+              <div class="check-name">CEIDG — ${ceidgMsg}</div>
+              <div class="check-detail">Podmiot nie figuruje w Centralnej Ewidencji i Informacji o Działalności Gospodarczej.</div>
             </div>
           </div>
           <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button onclick="checkCeidg('${nip}')" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,180,255,0.4);background:rgba(0,180,255,0.1);color:#00b4ff;cursor:pointer;transition:all .2s">↻ Spróbuj ponownie</button>
-            <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ Sprawdź ręcznie na biznes.gov.pl</a>
+            <button onclick="checkRegistry('${nip}')" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,68,102,0.4);background:rgba(255,68,102,0.1);color:var(--danger);cursor:pointer;transition:all .2s">↻ Spróbuj ponownie</button>
+            <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ KRS ręcznie</a>
+            <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ CEIDG ręcznie</a>
           </div>
-          <div class="ceidg-note" style="margin-top:14px">Sprawdź bezpośrednio: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl/wyszukiwarka-firm</a></div>
-        </div>
-      </div></div>`;
+          <div class="krs-note" style="margin-top:14px">Sprawdź: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a> · <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl/wyszukiwarka-firm</a></div>
+        </div></div>
+      </div>`;
   }
-  // ── /CEIDG ────────────────────────────────────────────────────────────────
+  // ── /CEIDG / KRS ──────────────────────────────────────────────────────────
 
   // ── Collapsible sections ─────────────────────────────────────────────────
   function toggleSection(chevronEl) {
@@ -2673,254 +2649,6 @@
     return names[code] || code;
   }
 
-  // ── KRS ────────────────────────────────────────────────────────────────────
-  async function checkKrs(nip) {
-    const container = document.getElementById('krsContainer');
-    if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
-
-    container.innerHTML = `
-      <div class="krs-card">
-        <div class="krs-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="krs-title-row">
-            <div class="krs-logo">⚖️</div>
-            <div>
-              <div class="krs-label">KRS</div>
-              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
-            </div>
-          </div>
-          <div class="header-right">
-            <div class="krs-status-pill info">Sprawdzam…</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="krs-loading">
-          <div class="krs-loading-inner">
-            <div class="krs-spinner"></div>
-            Pobieranie danych z KRS (api-krs.ms.gov.pl)…
-          </div>
-        </div></div>
-      </div>`;
-
-    try {
-      const resp = await fetch(
-        `https://carriercheck-backend.onrender.com/krs?nip=${encodeURIComponent(nip)}`,
-        { signal: AbortSignal.timeout(20000) }
-      );
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Brak danych z KRS');
-      if (!json.found) { renderKrsNotFound(nip); return; }
-      renderKrs(nip, json);
-    } catch (err) {
-      renderKrsError(nip, err.message);
-    }
-  }
-
-  function renderKrs(nip, json) {
-    const container = document.getElementById('krsContainer');
-
-    // Rzeczywista struktura API KRS: json.odpis.odpis.dane.dzial1.*
-    const odpisRoot  = (json.odpis || {}).odpis || json.odpis || {};
-    const daneRoot   = odpisRoot.dane || odpisRoot;
-    const dzial1     = daneRoot.dzial1 || {};
-    const podmiot    = dzial1.danePodmiotu || {};
-    const identyf    = podmiot.identyfikatory || {};
-    const siedzibaD  = dzial1.siedzibaIAdres || {};
-    const adresObj   = siedzibaD.adres || {};
-    const siedzibaObj= siedzibaD.siedziba || {};
-    const kapital    = dzial1.kapital || {};
-    const dzial2     = daneRoot.dzial2 || {};
-    // Zarząd może być w dzial2 lub dzial3
-    const dzial3     = daneRoot.dzial3 || {};
-    const organyRaw  = dzial2.organyPodmiotu || dzial3.organyPodmiotu || [];
-
-    // Wyciągnij kluczowe pola
-    const nazwa    = podmiot.nazwa   || json.nazwa   || '—';
-    const krsNr    = json.krs        || '—';
-    const regon    = identyf.regon   || '—';
-    const nipVal   = identyf.nip     || nip;
-    const formaPr  = podmiot.formaPrawna || '—';
-
-    // Adres siedziby
-    const adresParts = [
-      adresObj.ulica,
-      adresObj.nrDomu,
-      adresObj.kodPocztowy,
-      adresObj.miejscowosc || siedzibaObj.miejscowosc
-    ].filter(Boolean);
-    const adresStr = adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || '—');
-
-    // Kapital zakładowy
-    const kapitalWart = (kapital.wysokoscKapitaluZakladowego || {}).wartosc;
-    const kapitalWal  = (kapital.wysokoscKapitaluZakladowego || {}).waluta || 'PLN';
-    const kapitalStr  = kapitalWart ? `${Number(kapitalWart.replace(',','.').replace(' ','')).toLocaleString('pl-PL')} ${kapitalWal}` : null;
-
-    // Zarząd — iteruj organy, szukaj zarządu
-    let czlonkowie = [];
-    if (Array.isArray(organyRaw)) {
-      organyRaw.forEach(organ => {
-        const osoby = organ.czlonkowie || organ.osoby || [];
-        if (Array.isArray(osoby)) czlonkowie = czlonkowie.concat(osoby);
-      });
-    }
-    // Fallback — sprawdź dzial2 wprost
-    if (!czlonkowie.length) {
-      const zarz = dzial2.zarzad || dzial2.wspolnicy || [];
-      if (Array.isArray(zarz)) czlonkowie = zarz;
-    }
-
-    const zarzadHtml = czlonkowie.length ? `
-      <div class="krs-section-title">👔 Zarząd / Reprezentacja</div>
-      <div class="krs-person-list">
-        ${czlonkowie.slice(0, 10).map(os => {
-          const osobaDane = os.osobaFizyczna || os.osobaPrawna || os;
-          const imie = osobaDane.imiona || osobaDane.imie || '';
-          const nazw = osobaDane.nazwisko || '';
-          const funk = os.funkcja || os.rola || osobaDane.funkcja || '';
-          const label = [imie, nazw].filter(Boolean).join(' ') || JSON.stringify(os).substring(0,40);
-          return `<div class="krs-person">${label}${funk ? ' · <em>' + funk + '</em>' : ''}</div>`;
-        }).join('')}
-      </div>` : '';
-
-    // Poprzedni rejestr
-    const poprzedni = podmiot.daneOWczesniejszejRejestracji;
-    const poprzedniHtml = poprzedni ? `
-      <div class="krs-field">
-        <span class="krs-field-label">Poprzedni rejestr</span>
-        <span class="krs-field-value" style="font-size:11px">${poprzedni.nazwaPoprzedniegoRejestru || ''} nr ${poprzedni.numerWPoprzednimRejestrze || ''}</span>
-      </div>` : '';
-
-    // KRS API nie zwraca explicite statusu aktywności w OdpisAktualny — jeśli odpis istnieje, podmiot jest aktywny
-    const headerCls = 'ok-header';
-    const pillCls   = 'ok';
-    const pillTxt   = 'Aktywny w KRS';
-
-    container.innerHTML = `
-      <div class="krs-card">
-        <div class="krs-header ${headerCls} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="krs-title-row">
-            <div class="krs-logo">⚖️</div>
-            <div>
-              <div class="krs-label">KRS</div>
-              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
-            </div>
-          </div>
-          <div class="header-right">
-            <div class="krs-status-pill ${pillCls}">${pillTxt}</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="krs-body">
-          <div class="krs-grid">
-            <div class="krs-field" style="grid-column:1/-1">
-              <span class="krs-field-label">Nazwa / Firma</span>
-              <span class="krs-field-value orange">${nazwa}</span>
-            </div>
-            <div class="krs-field">
-              <span class="krs-field-label">Numer KRS</span>
-              <span class="krs-field-value">${krsNr}</span>
-            </div>
-            <div class="krs-field">
-              <span class="krs-field-label">NIP</span>
-              <span class="krs-field-value">${nipVal}</span>
-            </div>
-            <div class="krs-field">
-              <span class="krs-field-label">REGON</span>
-              <span class="krs-field-value ${regon === '—' ? 'empty' : ''}">${regon}</span>
-            </div>
-            <div class="krs-field">
-              <span class="krs-field-label">Forma prawna</span>
-              <span class="krs-field-value">${formaPr}</span>
-            </div>
-            ${kapitalStr ? `<div class="krs-field">
-              <span class="krs-field-label">Kapitał zakładowy</span>
-              <span class="krs-field-value">${kapitalStr}</span>
-            </div>` : ''}
-            ${poprzedniHtml}
-            <div class="krs-field" style="grid-column:1/-1">
-              <span class="krs-field-label">Adres siedziby</span>
-              <span class="krs-field-value">${adresStr}</span>
-            </div>
-          </div>
-          ${zarzadHtml}
-          <div class="krs-note" style="margin-top:16px">
-            Źródło: <a href="https://api-krs.ms.gov.pl" target="_blank">api-krs.ms.gov.pl</a> (Ministerstwo Sprawiedliwości).
-            Pełna weryfikacja: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a>
-          </div>
-          <div class="raw-section" style="margin-top:12px">
-            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe KRS (JSON)</button>
-            <pre class="raw-data">${JSON.stringify(json, null, 2)}</pre>
-          </div>
-        </div></div>
-      </div>`;
-  }
-
-  function renderKrsNotFound(nip) {
-    const container = document.getElementById('krsContainer');
-    container.innerHTML = `
-      <div class="krs-card">
-        <div class="krs-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="krs-title-row">
-            <div class="krs-logo">⚖️</div>
-            <div>
-              <div class="krs-label">KRS</div>
-              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
-            </div>
-          </div>
-          <div class="header-right">
-            <div class="krs-status-pill error">Nie znaleziono</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="krs-body">
-          <div class="kreptd-check-row">
-            <div class="check-indicator fail">✗</div>
-            <div class="check-content">
-              <div class="check-name">NIP ${nip} nie figuruje w KRS</div>
-              <div class="check-detail">Podmiot nie jest zarejestrowany w Krajowym Rejestrze Sądowym. Może być osobą fizyczną prowadzącą działalność (CEIDG).</div>
-            </div>
-          </div>
-          <div class="krs-note">Sprawdź bezpośrednio: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a></div>
-        </div></div>
-      </div>`;
-  }
-
-  function renderKrsError(nip, errMsg) {
-    const container = document.getElementById('krsContainer');
-    container.innerHTML = `
-      <div class="krs-card">
-        <div class="krs-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="krs-title-row">
-            <div class="krs-logo">⚖️</div>
-            <div>
-              <div class="krs-label">KRS</div>
-              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
-            </div>
-          </div>
-          <div class="header-right">
-            <div class="krs-status-pill error">Niedostępne</div>
-            <span class="collapse-chevron collapsed">▾</span>
-          </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="krs-body">
-          <div class="kreptd-check-row">
-            <div class="check-indicator fail">!</div>
-            <div class="check-content">
-              <div class="check-name">Nie udało się pobrać danych KRS</div>
-              <div class="check-detail">API KRS tymczasowo niedostępne.<br>
-                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button onclick="checkKrs('${nip}')" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,100,0,0.4);background:rgba(255,100,0,0.1);color:#ff8c42;cursor:pointer;transition:all .2s">↻ Spróbuj ponownie</button>
-            <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ Sprawdź ręcznie na wyszukiwarka-krs.ms.gov.pl</a>
-          </div>
-          <div class="krs-note" style="margin-top:14px">Sprawdź bezpośrednio: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a></div>
-        </div></div>
-      </div>`;
-  }
-  // ── /KRS ──────────────────────────────────────────────────────────────────
 </script>
 
 </body>
