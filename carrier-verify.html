@@ -1336,6 +1336,197 @@
     color: var(--accent);
     font-weight: 700;
   }
+
+  /* ── KRS ────────────────────────────────────────────────────────────── */
+  .krs-card {
+    margin-top: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .krs-header {
+    background: rgba(255, 100, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 100, 0, 0.25);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .krs-header.ok-header {
+    background: rgba(0, 229, 160, 0.08);
+    border-bottom: 1px solid rgba(0, 229, 160, 0.2);
+  }
+
+  .krs-header.err-header {
+    background: rgba(255, 68, 102, 0.08);
+    border-bottom: 1px solid rgba(255, 68, 102, 0.2);
+  }
+
+  .krs-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .krs-logo {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 100, 0, 0.2);
+    border: 1px solid rgba(255, 100, 0, 0.4);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .krs-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #ff8c42;
+    letter-spacing: 0.5px;
+  }
+
+  .krs-sublabel {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .krs-status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .krs-status-pill.ok    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .krs-status-pill.warn  { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,170,0,0.3); }
+  .krs-status-pill.error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,68,102,0.3); }
+  .krs-status-pill.info  { background: rgba(255,100,0,0.12); color: #ff8c42; border: 1px solid rgba(255,100,0,0.3); }
+
+  .krs-body {
+    background: var(--surface);
+    padding: 28px;
+  }
+
+  .krs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .krs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .krs-field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .krs-field-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .krs-field-value.orange { color: #ff8c42; font-size: 15px; }
+  .krs-field-value.empty  { color: var(--text-muted); font-style: italic; font-size: 11px; font-family: var(--sans); }
+
+  .krs-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .krs-loading {
+    padding: 32px;
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .krs-loading-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .krs-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,100,0,0.2);
+    border-top-color: #ff8c42;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .krs-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .krs-note a { color: #ff8c42; text-decoration: none; }
+  .krs-note a:hover { text-decoration: underline; }
+
+  .krs-person-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .krs-person {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,100,0,0.5);
+    border-radius: 6px;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -2470,257 +2661,6 @@
   }
   // ── /Collapsible sections ─────────────────────────────────────────────────
 
-  // ── KRS ────────────────────────────────────────────────────────────────────
-  async function checkKrs(nip) {
-    const container = document.getElementById('krsContainer');
-    if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
-
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">⚖️</div>
-            <div>
-              <div class="ceidg-label">KRS</div>
-              <div class="ceidg-sublabel">Krajowy Rejestr Sądowy — Ministerstwo Sprawiedliwości</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill info">Sprawdzam…</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-loading">
-          <div class="ceidg-loading-inner">
-            <div class="ceidg-spinner"></div>
-            Pobieranie danych z api-krs.ms.gov.pl…
-          </div>
-        </div>
-      </div></div>`;
-
-    const BACKEND = 'https://carriercheck-backend.onrender.com';
-
-    try {
-      const resp = await fetch(`${BACKEND}/krs?nip=${nip}`, {
-        signal: AbortSignal.timeout(25000)
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Nieznany błąd');
-      if (!json.found || !json.odpis) { renderKrsNotFound(nip); return; }
-      renderKrs(nip, json.odpis);
-    } catch (err) {
-      renderKrsError(nip, err.message);
-    }
-  }
-
-  function renderKrs(nip, odpis) {
-    const container = document.getElementById('krsContainer');
-
-    // API prs.ms.gov.pl zwraca zagnieżdżoną strukturę — obsługujemy różne warianty
-    // Struktura: odpis.odpis.dane.* lub odpis.dane.* lub odpis.*
-    const root   = odpis?.odpis || odpis || {};
-    const dane   = root?.dane || root;
-
-    // Nagłówki mogą być w różnych polach zależnie od typu podmiotu
-    const naglA  = dane?.naglowekA  || {};   // rejestr przedsiębiorców
-    const naglD  = dane?.naglowekD  || {};   // rejestr stowarzyszeń itd.
-    const nagl   = Object.keys(naglA).length ? naglA : naglD;
-
-    const dzial1 = dane?.dzial1 || {};
-    const dzial1a = dane?.dzial1?.danePodmiotu || dane?.dzial1a || {};
-    const adr    = dzial1a?.adresy?.[0] || dzial1a?.adresSiedziby || dane?.adresGlownejSiedziby || {};
-
-    const nazwaFirmy  = nagl?.nazwa || dzial1a?.nazwa || odpis?.nazwa || '—';
-    const nrKrs       = nagl?.numerKRS || odpis?.numerKRS || odpis?.krs || '—';
-    const nrNip       = nagl?.nip || dzial1a?.nip || nip;
-    const nrRegon     = nagl?.regon || dzial1a?.regon || '—';
-    const formaPrawna = nagl?.formaPrawna || dzial1a?.formaPrawna || '—';
-    const dataRej     = nagl?.dataRejestracjiWKRS || nagl?.dataWpisuDoKRS || '—';
-    const statusPodm  = nagl?.statusPodmiotu || odpis?.status || '';
-
-    // Adres siedziby
-    const ulica   = adr?.ulica  || adr?.ulicaNazwa  || '';
-    const nrBud   = adr?.nrDomu || adr?.numerBudynku || adr?.numerDomu || '';
-    const nrLok   = adr?.nrLokalu || adr?.numerLokalu || '';
-    const kodPocz = adr?.kodPocztowy || '';
-    const miasto  = adr?.miejscowosc || adr?.miasto || '';
-    const adresStr = [ulica, nrBud + (nrLok ? `/${nrLok}` : ''), kodPocz, miasto].filter(Boolean).join(' ') || '—';
-
-    // Sąd rejestrowy
-    const sad     = dane?.organRejestrowy?.nazwa || nagl?.sadRejestrowy || '—';
-    const wydzial = dane?.organRejestrowy?.wydzial || '';
-
-    const isActive = !statusPodm || ['', 'aktywny', 'zarejestrowany'].some(s => statusPodm.toLowerCase().includes(s));
-    const pillCls   = isActive ? 'ok' : 'warn';
-    const headerCls = isActive ? 'ok-header' : '';
-    const statusTxt = statusPodm || 'Zarejestrowany';
-
-    // Zarząd / organy
-    const organy = dane?.dzial2?.organPrzedsiebiorcy || dane?.dzial2?.spolnicy || [];
-    const osoby  = Array.isArray(organy) ? organy : (organy ? [organy] : []);
-    const zarzadHtml = osoby.length > 0 ? `
-      <div class="ceidg-section-title">👥 Organy / Zarząd</div>
-      <div class="ceidg-grid">
-        ${osoby.slice(0,6).map(o => {
-          const imNaz = [o.imie1, o.imie2, o.nazwisko].filter(Boolean).join(' ')
-                     || o.nazwaSpolnicy || o.nazwa || o.imieNazwisko || '—';
-          const funk  = o.funkcja || o.rodzajOrganu || '';
-          return `<div class="ceidg-field"><span class="ceidg-field-label">${funk}</span><span class="ceidg-field-value">${imNaz}</span></div>`;
-        }).join('')}
-      </div>` : '';
-
-    // PKD
-    const pkdArr  = dane?.dzial3?.przedmiotDzialalnosci?.przedmiotPrzewazajacejDzialalnosci || [];
-    const pkdInne = dane?.dzial3?.przedmiotDzialalnosci?.przedmiotPozostalejDzialalnosci    || [];
-    const pkdAll  = [...(Array.isArray(pkdArr) ? pkdArr : [pkdArr].filter(Boolean)),
-                     ...(Array.isArray(pkdInne) ? pkdInne : [pkdInne].filter(Boolean))];
-    const pkdHtml = pkdAll.length > 0 ? `
-      <div class="ceidg-section-title">📋 Kody PKD</div>
-      <div class="ceidg-pkd-list">
-        ${pkdAll.slice(0,12).map(p => {
-          const kod = p.kodDzialalnosci || p.kod || '';
-          const glowna = pkdArr.includes(p);
-          return `<span class="ceidg-pkd-badge${glowna ? ' main' : ''}" title="${p.z || p.opis || ''}">${kod}${glowna ? ' ★' : ''}</span>`;
-        }).join('')}
-      </div>` : '';
-
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header ${headerCls} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">⚖️</div>
-            <div>
-              <div class="ceidg-label">KRS</div>
-              <div class="ceidg-sublabel">Krajowy Rejestr Sądowy — Ministerstwo Sprawiedliwości</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill ${pillCls}">${statusTxt}</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
-          <div class="ceidg-section-title">🏢 Dane z rejestru</div>
-          <div class="ceidg-grid">
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Nazwa / Firma</span>
-              <span class="ceidg-field-value cblue">${nazwaFirmy}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Numer KRS</span>
-              <span class="ceidg-field-value accent">${nrKrs}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">NIP</span>
-              <span class="ceidg-field-value">${nrNip}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">REGON</span>
-              <span class="ceidg-field-value ${nrRegon === '—' ? 'empty' : ''}">${nrRegon}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Forma prawna</span>
-              <span class="ceidg-field-value">${formaPrawna}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Status podmiotu</span>
-              <span class="ceidg-field-value ${isActive ? 'accent' : ''}">${statusTxt}</span>
-            </div>
-            <div class="ceidg-field">
-              <span class="ceidg-field-label">Data rejestracji w KRS</span>
-              <span class="ceidg-field-value">${dataRej}</span>
-            </div>
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Adres siedziby</span>
-              <span class="ceidg-field-value">${adresStr}</span>
-            </div>
-            <div class="ceidg-field" style="grid-column:1/-1">
-              <span class="ceidg-field-label">Sąd rejestrowy</span>
-              <span class="ceidg-field-value">${sad}${wydzial ? ' / ' + wydzial : ''}</span>
-            </div>
-          </div>
-          ${zarzadHtml}
-          ${pkdHtml}
-          <div class="ceidg-note" style="margin-top:16px">
-            Źródło: <a href="https://prs.ms.gov.pl/krs/openApi" target="_blank">prs.ms.gov.pl</a> (Ministerstwo Sprawiedliwości — bezpłatne API publiczne).
-            Pełna weryfikacja: <a href="https://ekrs.ms.gov.pl" target="_blank">ekrs.ms.gov.pl</a>
-          </div>
-          <div class="raw-section" style="margin-top:12px">
-            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe KRS (JSON)</button>
-            <pre class="raw-data">${JSON.stringify(odpis, null, 2)}</pre>
-          </div>
-        </div>
-      </div></div>`;
-  }
-
-  function renderKrsNotFound(nip) {
-    const container = document.getElementById('krsContainer');
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">⚖️</div>
-            <div>
-              <div class="ceidg-label">KRS</div>
-              <div class="ceidg-sublabel">Krajowy Rejestr Sądowy — Ministerstwo Sprawiedliwości</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill error">Nie znaleziono</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
-          <div class="kreptd-check-row">
-            <div class="check-indicator fail">✗</div>
-            <div class="check-content">
-              <div class="check-name">NIP ${nip} nie figuruje w KRS</div>
-              <div class="check-detail">Podmiot nie jest zarejestrowany w Krajowym Rejestrze Sądowym (dotyczy spółek, stowarzyszeń, fundacji). Działalność gospodarcza może być prowadzona jako jednoosobowa działalność w CEIDG.</div>
-            </div>
-          </div>
-          <div class="ceidg-note">Sprawdź bezpośrednio: <a href="https://ekrs.ms.gov.pl" target="_blank">ekrs.ms.gov.pl</a></div>
-        </div>
-      </div></div>`;
-  }
-
-  function renderKrsError(nip, errMsg) {
-    const container = document.getElementById('krsContainer');
-    container.innerHTML = `
-      <div class="ceidg-card">
-        <div class="ceidg-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
-          <div class="ceidg-title-row">
-            <div class="ceidg-logo">⚖️</div>
-            <div>
-              <div class="ceidg-label">KRS</div>
-              <div class="ceidg-sublabel">Krajowy Rejestr Sądowy — Ministerstwo Sprawiedliwości</div>
-            </div>
-          </div>
-          <div class="header-right">
-          <div class="ceidg-status-pill error">Niedostępne</div>
-          <span class="collapse-chevron collapsed">▾</span>
-        </div>
-        </div>
-        <div class="collapsible-body collapsed"><div class="ceidg-body">
-          <div class="kreptd-check-row">
-            <div class="check-indicator fail">!</div>
-            <div class="check-content">
-              <div class="check-name">Nie udało się pobrać danych KRS</div>
-              <div class="check-detail">API KRS tymczasowo niedostępne.<br>
-                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button onclick="checkKrs('${nip}')" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,180,255,0.4);background:rgba(0,180,255,0.1);color:#00b4ff;cursor:pointer;transition:all .2s">↻ Spróbuj ponownie</button>
-            <a href="https://ekrs.ms.gov.pl" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ Sprawdź ręcznie na ekrs.ms.gov.pl</a>
-          </div>
-          <div class="ceidg-note" style="margin-top:14px">Sprawdź bezpośrednio: <a href="https://ekrs.ms.gov.pl" target="_blank">ekrs.ms.gov.pl</a></div>
-        </div>
-      </div></div>`;
-  }
-  // ── /KRS ──────────────────────────────────────────────────────────────────
-
   function getCountryName(code) {
     const names = {
       PL:'Polska', DE:'Niemcy', CZ:'Czechy', SK:'Słowacja', HU:'Węgry',
@@ -2732,6 +2672,215 @@
     };
     return names[code] || code;
   }
+
+  // ── KRS ────────────────────────────────────────────────────────────────────
+  async function checkKrs(nip) {
+    const container = document.getElementById('krsContainer');
+    if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+      <div class="krs-card">
+        <div class="krs-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">⚖️</div>
+            <div>
+              <div class="krs-label">KRS</div>
+              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="krs-status-pill info">Sprawdzam…</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="krs-loading">
+          <div class="krs-loading-inner">
+            <div class="krs-spinner"></div>
+            Pobieranie danych z KRS (api-krs.ms.gov.pl)…
+          </div>
+        </div></div>
+      </div>`;
+
+    try {
+      const resp = await fetch(
+        `https://carriercheck-backend.onrender.com/krs?nip=${encodeURIComponent(nip)}`,
+        { signal: AbortSignal.timeout(20000) }
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Brak danych z KRS');
+      if (!json.found) { renderKrsNotFound(nip); return; }
+      renderKrs(nip, json);
+    } catch (err) {
+      renderKrsError(nip, err.message);
+    }
+  }
+
+  function renderKrs(nip, json) {
+    const container = document.getElementById('krsContainer');
+    const d = json.odpis || {};
+    const nagl = d.naglowekA || d.naglowekP || {};
+    const dane = d.dzial1 || d.dane || {};
+
+    // Wyciągnij kluczowe pola z odpowiedzi KRS (struktura różni się wg formy prawnej)
+    const nazwa    = nagl.nazwa || d.firma || d.nazwaFirmy || json.nazwa || '—';
+    const krsNr    = json.krs || nagl.numerKRS || '—';
+    const regon    = nagl.numerREGON || json.regon || '—';
+    const nipVal   = nagl.nip || nip;
+    const formaPr  = nagl.formaPrawna || d.formaPrawna || json.formaPrawna || '—';
+    const statusR  = nagl.statusPodmiotu || nagl.czyAktywny || json.status || '';
+    const dataRej  = formatDate(nagl.dataRejestracjiWKRS || nagl.dataWpisu || json.dataRejestracji);
+    const siedziba = nagl.siedziba || nagl.miejscowosc || '—';
+    const adresStr = (() => {
+      const a = d.adres || d.siedziba || {};
+      const parts = [a.ulica, a.nrDomu, a.kodPocztowy, a.miejscowosc].filter(Boolean);
+      return parts.length ? parts.join(' ') : siedziba;
+    })();
+
+    // Zarząd / reprezentacja
+    const zarzad = (d.zarzad || d.osobyReprezentujace || d.czlonkowieZarzadu || []);
+    const zarzadHtml = zarzad.length ? `
+      <div class="krs-section-title">👔 Zarząd / Reprezentacja</div>
+      <div class="krs-person-list">
+        ${zarzad.slice(0, 8).map(os => {
+          const imie = os.imie || os.imiona || '';
+          const nazw = os.nazwisko || '';
+          const funk = os.funkcja || os.rola || '';
+          return `<div class="krs-person">${[imie, nazw].filter(Boolean).join(' ')}${funk ? ' · <em>' + funk + '</em>' : ''}</div>`;
+        }).join('')}
+      </div>` : '';
+
+    // Status barwa
+    const isActive = !statusR || statusR.toLowerCase().includes('aktywn') || statusR === 'true' || statusR === true;
+    const headerCls = isActive ? 'ok-header' : 'err-header';
+    const pillCls   = isActive ? 'ok' : 'error';
+    const pillTxt   = isActive ? 'Aktywny w KRS' : (statusR || 'Nieaktywny');
+
+    container.innerHTML = `
+      <div class="krs-card">
+        <div class="krs-header ${headerCls} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">⚖️</div>
+            <div>
+              <div class="krs-label">KRS</div>
+              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="krs-status-pill ${pillCls}">${pillTxt}</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="krs-body">
+          <div class="krs-grid">
+            <div class="krs-field" style="grid-column:1/-1">
+              <span class="krs-field-label">Nazwa / Firma</span>
+              <span class="krs-field-value orange">${nazwa}</span>
+            </div>
+            <div class="krs-field">
+              <span class="krs-field-label">Numer KRS</span>
+              <span class="krs-field-value">${krsNr}</span>
+            </div>
+            <div class="krs-field">
+              <span class="krs-field-label">NIP</span>
+              <span class="krs-field-value">${nipVal}</span>
+            </div>
+            <div class="krs-field">
+              <span class="krs-field-label">REGON</span>
+              <span class="krs-field-value ${regon === '—' ? 'empty' : ''}">${regon}</span>
+            </div>
+            <div class="krs-field">
+              <span class="krs-field-label">Forma prawna</span>
+              <span class="krs-field-value">${formaPr}</span>
+            </div>
+            <div class="krs-field">
+              <span class="krs-field-label">Data rejestracji</span>
+              <span class="krs-field-value">${dataRej}</span>
+            </div>
+            <div class="krs-field" style="grid-column:1/-1">
+              <span class="krs-field-label">Adres siedziby</span>
+              <span class="krs-field-value">${adresStr}</span>
+            </div>
+          </div>
+          ${zarzadHtml}
+          <div class="krs-note" style="margin-top:16px">
+            Źródło: <a href="https://api-krs.ms.gov.pl" target="_blank">api-krs.ms.gov.pl</a> (Ministerstwo Sprawiedliwości).
+            Pełna weryfikacja: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a>
+          </div>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe KRS (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json, null, 2)}</pre>
+          </div>
+        </div></div>
+      </div>`;
+  }
+
+  function renderKrsNotFound(nip) {
+    const container = document.getElementById('krsContainer');
+    container.innerHTML = `
+      <div class="krs-card">
+        <div class="krs-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">⚖️</div>
+            <div>
+              <div class="krs-label">KRS</div>
+              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="krs-status-pill error">Nie znaleziono</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="krs-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">✗</div>
+            <div class="check-content">
+              <div class="check-name">NIP ${nip} nie figuruje w KRS</div>
+              <div class="check-detail">Podmiot nie jest zarejestrowany w Krajowym Rejestrze Sądowym. Może być osobą fizyczną prowadzącą działalność (CEIDG).</div>
+            </div>
+          </div>
+          <div class="krs-note">Sprawdź bezpośrednio: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a></div>
+        </div></div>
+      </div>`;
+  }
+
+  function renderKrsError(nip, errMsg) {
+    const container = document.getElementById('krsContainer');
+    container.innerHTML = `
+      <div class="krs-card">
+        <div class="krs-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="krs-title-row">
+            <div class="krs-logo">⚖️</div>
+            <div>
+              <div class="krs-label">KRS</div>
+              <div class="krs-sublabel">Krajowy Rejestr Sądowy (Ministerstwo Sprawiedliwości)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="krs-status-pill error">Niedostępne</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="krs-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">!</div>
+            <div class="check-content">
+              <div class="check-name">Nie udało się pobrać danych KRS</div>
+              <div class="check-detail">API KRS tymczasowo niedostępne.<br>
+                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onclick="checkKrs('${nip}')" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,100,0,0.4);background:rgba(255,100,0,0.1);color:#ff8c42;cursor:pointer;transition:all .2s">↻ Spróbuj ponownie</button>
+            <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank" style="font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px">↗ Sprawdź ręcznie na wyszukiwarka-krs.ms.gov.pl</a>
+          </div>
+          <div class="krs-note" style="margin-top:14px">Sprawdź bezpośrednio: <a href="https://wyszukiwarka-krs.ms.gov.pl" target="_blank">wyszukiwarka-krs.ms.gov.pl</a></div>
+        </div></div>
+      </div>`;
+  }
+  // ── /KRS ──────────────────────────────────────────────────────────────────
 </script>
 
 </body>
