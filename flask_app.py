@@ -8,6 +8,7 @@ app = Flask(__name__)
 # ── Token CEIDG – przechowywany wyłącznie po stronie serwera ─────────────────
 CEIDG_TOKEN = 'eyJraWQiOiJjZWlkZyIsImFsZyI6IkhTNTEyIn0.eyJnaXZlbl9uYW1lIjoiREFXSUQiLCJwZXNlbCI6Ijk5MDIyMDAzNTMzIiwiaWF0IjoxNzc1MjMyNDU5LCJmYW1pbHlfbmFtZSI6IkpVU1RZxYNTS0kiLCJjbGllbnRfaWQiOiJVU0VSLTk5MDIyMDAzNTMzLURBV0lELUpVU1RZxYNTS0kifQ.RgU7tn2IVo8wBj7TStTgv2akNfnkWqMYZkKSAfIG4xTOrkTpQSRje73P1JK0LC1yZhXRnwd1bT8GeRBK8Wvk2g'
 CEIDG_BASE  = 'https://dane.biznes.gov.pl/api/ceidg/v3'
+KRS_BASE    = 'https://api-krs.ms.gov.pl/api/krs'
 
 @app.route('/')
 def index():
@@ -190,12 +191,8 @@ def ceidg():
         print(f"[CEIDG] wyjątek: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ── KRS proxy (Portal Rejestrów Sądowych — prs.ms.gov.pl — bezpłatne, bez klucza) ──
-# Prawidłowe API: https://prs.ms.gov.pl/krs/openApi
-# Krok 1: szukamy podmiotów po NIP → dostajemy numer KRS
-# Krok 2: pobieramy odpis aktualny po numerze KRS
-KRS_BASE = 'https://api-krs.ms.gov.pl/api/krs'
-
+# ── KRS proxy ─────────────────────────────────────────────────────────────────
+# Otwarte API KRS nie wymaga tokenu – proxy potrzebne wyłącznie z powodu CORS.
 @app.route('/krs')
 def krs():
     nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
@@ -204,105 +201,95 @@ def krs():
 
     headers = {
         'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; CarrierCheck/1.0)',
+        'User-Agent': 'CarrierCheck/1.0',
     }
 
     try:
-        # ── Krok 1: wyszukiwanie podmiotów po NIP ──────────────────────────────
-        # Endpoint: GET /api/krs/OdpisAktualny/wyszukaj?nip=...
-        # Zwraca listę podmiotów pasujących do NIP
-        search_url = f'{KRS_BASE}/OdpisAktualny/wyszukaj'
-        r1 = requests.get(search_url, params={'nip': nip}, headers=headers, timeout=20)
-        print(f"[KRS] wyszukaj NIP={nip} status={r1.status_code} body={r1.text[:400]}")
+        krs_number = None
 
-        krs_nr = None
-
-        if r1.ok:
-            items = r1.json()
-            # Odpowiedź to lista lub obiekt z listą podmiotów
-            if isinstance(items, list) and len(items) > 0:
-                krs_nr = items[0].get('numerKRS') or items[0].get('krs')
-            elif isinstance(items, dict):
-                lista = items.get('odpisy') or items.get('podmioty') or items.get('items') or []
-                if lista:
-                    krs_nr = lista[0].get('numerKRS') or lista[0].get('krs')
-
-        # ── Krok 2: jeśli nie znaleźliśmy przez /wyszukaj, próbuj /search ──────
-        if not krs_nr:
-            r1b = requests.get(
-                f'{KRS_BASE}/OdpisAktualny/search',
-                params={'nip': nip},
+        # Krok 1: próba wyszukania po NIP przez podmiotySzukaj
+        try:
+            alt_resp = requests.get(
+                'https://api-krs.ms.gov.pl/api/krs/podmiotySzukaj',
+                params={'nip': nip, 'stronaWynikow': 0, 'iloscWynikow': 1},
                 headers=headers,
-                timeout=20
+                timeout=15
             )
-            print(f"[KRS] search NIP={nip} status={r1b.status_code} body={r1b.text[:400]}")
-            if r1b.ok:
-                items2 = r1b.json()
-                if isinstance(items2, list) and len(items2) > 0:
-                    krs_nr = items2[0].get('numerKRS') or items2[0].get('krs')
-                elif isinstance(items2, dict):
-                    lista2 = items2.get('odpisy') or items2.get('podmioty') or items2.get('items') or []
-                    if lista2:
-                        krs_nr = lista2[0].get('numerKRS') or lista2[0].get('krs')
+            print(f"[KRS] podmiotySzukaj NIP={nip} status={alt_resp.status_code} body={alt_resp.text[:400]}")
+            if alt_resp.ok:
+                alt_data = alt_resp.json()
+                items = (alt_data.get('odpisy')
+                         or alt_data.get('wyniki')
+                         or alt_data.get('podmioty')
+                         or [])
+                if isinstance(items, list) and items:
+                    krs_number = items[0].get('numerKRS') or items[0].get('krs')
+        except Exception as e:
+            print(f"[KRS] podmiotySzukaj wyjątek: {e}")
 
-        # ── Krok 2b: próbuj endpoint /podmiot z NIP ────────────────────────────
-        if not krs_nr:
-            for rejestr in ['P', 'S']:
-                r1c = requests.get(
-                    f'{KRS_BASE}/OdpisAktualny/',
-                    params={'nip': nip, 'rejestr': rejestr, 'format': 'json'},
+        # Krok 2: fallback – pobierz numer KRS z Białej Listy VAT (pole 'krs')
+        if not krs_number:
+            try:
+                bl_resp = requests.get(
+                    f'https://wl-api.mf.gov.pl/api/search/nip/{nip}',
+                    params={'date': datetime.date.today().isoformat()},
+                    timeout=15
+                )
+                print(f"[KRS] BL status={bl_resp.status_code} body={bl_resp.text[:300]}")
+                if bl_resp.ok:
+                    subj = bl_resp.json().get('result', {}).get('subject', {})
+                    krs_number = subj.get('krs') if subj else None
+                    print(f"[KRS] BL krs_number={krs_number}")
+            except Exception as e:
+                print(f"[KRS] BL wyjątek: {e}")
+
+        if not krs_number:
+            return jsonify({
+                'success': True,
+                'found': False,
+                'nip': nip,
+                'info': 'Nie znaleziono numeru KRS dla podanego NIP. Podmiot może być wpisany do CEIDG (jednoosobowa działalność).'
+            })
+
+        # Krok 3: pobierz odpis aktualny po numerze KRS
+        krs_padded = str(krs_number).zfill(10)
+        for rejestr in ['P', 'S']:
+            try:
+                odpis_resp = requests.get(
+                    f'{KRS_BASE}/OdpisAktualny/{krs_padded}',
+                    params={'rejestr': rejestr, 'format': 'json'},
                     headers=headers,
                     timeout=20
                 )
-                print(f"[KRS] OdpisAktualny rejestr={rejestr} NIP={nip} status={r1c.status_code} body={r1c.text[:400]}")
-                if r1c.ok and r1c.text.strip():
-                    try:
-                        d = r1c.json()
-                        # Jeśli dostaliśmy pełny odpis od razu — zwracamy go
-                        if d and isinstance(d, dict) and ('odpis' in d or 'dane' in d or 'naglowekA' in d):
-                            return jsonify({'success': True, 'found': True, 'nip': nip, 'odpis': d})
-                        # Może to lista — wyciągamy numer KRS
-                        if isinstance(d, list) and len(d) > 0:
-                            krs_nr = d[0].get('numerKRS') or d[0].get('krs')
-                            if krs_nr:
-                                break
-                    except Exception:
-                        pass
+                print(f"[KRS] OdpisAktualny krs={krs_padded} rejestr={rejestr} status={odpis_resp.status_code}")
+                if odpis_resp.status_code == 404:
+                    continue
+                if not odpis_resp.ok:
+                    continue
+                return jsonify({
+                    'success': True,
+                    'found': True,
+                    'nip': nip,
+                    'krs': krs_padded,
+                    'rejestr': rejestr,
+                    'odpis': odpis_resp.json()
+                })
+            except Exception as e:
+                print(f"[KRS] OdpisAktualny wyjątek rejestr={rejestr}: {e}")
 
-        if not krs_nr:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'odpis': None})
-
-        # ── Krok 3: pobieramy odpis aktualny po numerze KRS ───────────────────
-        # Numer KRS musi być 10-cyfrowy (z zerami wiodącymi)
-        krs_nr_str = str(krs_nr).zfill(10)
-
-        # Próbuj rejestr P (przedsiębiorcy) i S (stowarzyszenia)
-        odpis = None
-        for rejestr in ['P', 'S']:
-            r2 = requests.get(
-                f'{KRS_BASE}/OdpisAktualny/{krs_nr_str}',
-                params={'rejestr': rejestr, 'format': 'json'},
-                headers=headers,
-                timeout=25
-            )
-            print(f"[KRS] OdpisAktualny/{krs_nr_str} rejestr={rejestr} status={r2.status_code}")
-            if r2.ok and r2.text.strip():
-                try:
-                    odpis = r2.json()
-                    if odpis:
-                        break
-                except Exception:
-                    pass
-
-        if not odpis:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'odpis': None})
-
-        return jsonify({'success': True, 'found': True, 'nip': nip, 'krs': krs_nr_str, 'odpis': odpis})
+        # Fallback – KRS znaleziony, ale odpis niedostępny
+        return jsonify({
+            'success': True,
+            'found': True,
+            'nip': nip,
+            'krs': krs_padded,
+            'info': 'Numer KRS znaleziony, ale nie udało się pobrać odpisu z API.'
+        })
 
     except requests.exceptions.Timeout:
         return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API KRS niedostępne)'}), 504
     except requests.exceptions.HTTPError as e:
         return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}'}), 502
     except Exception as e:
-        print(f"[KRS] wyjątek: {e}")
+        print(f"[KRS] wyjątek globalny: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
