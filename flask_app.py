@@ -189,3 +189,52 @@ def ceidg():
     except Exception as e:
         print(f"[CEIDG] wyjątek: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ── KRS proxy (API Ministerstwa Sprawiedliwości — bezpłatne, bez klucza) ─────
+@app.route('/krs')
+def krs():
+    nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
+    if not nip or len(nip) != 10 or not nip.isdigit():
+        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+
+    headers = {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+    }
+
+    try:
+        # Szukamy podmiotu po NIP
+        resp = requests.get(
+            'https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/',
+            params={'nip': nip, 'rejestr': 'P', 'format': 'json'},
+            headers=headers,
+            timeout=20
+        )
+        print(f"[KRS] /OdpisAktualny NIP={nip} status={resp.status_code} body={resp.text[:400]}")
+
+        if resp.status_code == 404:
+            # Próbuj też rejestr S (stowarzyszenia, fundacje)
+            resp_s = requests.get(
+                'https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/',
+                params={'nip': nip, 'rejestr': 'S', 'format': 'json'},
+                headers=headers,
+                timeout=20
+            )
+            print(f"[KRS] /OdpisAktualny rejestr=S NIP={nip} status={resp_s.status_code}")
+            if resp_s.status_code == 404 or not resp_s.ok:
+                return jsonify({'success': True, 'found': False, 'nip': nip, 'odpis': None})
+            resp = resp_s
+
+        if not resp.ok:
+            return jsonify({'success': False, 'error': f'HTTP {resp.status_code}', 'nip': nip}), 502
+
+        data = resp.json()
+        return jsonify({'success': True, 'found': True, 'nip': nip, 'odpis': data})
+
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API KRS niedostępne)'}), 504
+    except requests.exceptions.HTTPError as e:
+        return jsonify({'success': False, 'error': f'Błąd HTTP: {str(e)}'}), 502
+    except Exception as e:
+        print(f"[KRS] wyjątek: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
