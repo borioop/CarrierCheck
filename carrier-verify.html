@@ -1525,9 +1525,9 @@
 
   function renderResult(country, vat, data) {
     const isValid = data.isValid === true || data.valid === true;
-    const statusClass = isValid ? 'valid' : 'invalid';
+    const pillCls = isValid ? 'ok' : 'error';
+    const headerCls = isValid ? 'ok-header' : 'err-header';
     const statusText = isValid ? 'Czynny podatnik VAT UE' : 'Niezarejestrowany / nieaktywny';
-    const statusIcon = isValid ? '✓' : '✗';
 
     const name = data.name || data.traderName || '—';
     const address = data.address || data.traderAddress || '—';
@@ -1535,53 +1535,54 @@
     const consultationNumber = data.consultationNumber || data.requestIdentifier || '—';
 
     document.getElementById('resultContainer').innerHTML = `
-      <div class="result-card">
-        <div class="result-header ${statusClass}">
-          <div class="status-badge">
-            <div class="status-icon">${statusIcon}</div>
-            ${statusText}
+      <div class="kreptd-card">
+        <div class="kreptd-header ${headerCls} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="kreptd-title-row">
+            <div class="kreptd-logo">🇪🇺</div>
+            <div>
+              <div class="kreptd-label">VIES</div>
+              <div class="kreptd-sublabel">VAT Information Exchange System (Komisja Europejska)</div>
+            </div>
           </div>
-          <div class="result-timestamp">${requestDate}</div>
+          <div class="kreptd-status-pill ${pillCls}">${statusText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="result-body">
-          <div class="result-grid">
-            <div class="result-field">
-              <span class="field-label">Numer VAT</span>
-              <span class="field-value highlight">${country}${vat}</span>
+        <div class="collapsible-body collapsed"><div class="kreptd-body">
+          <div class="bl-grid">
+            <div class="bl-field">
+              <span class="bl-field-label">Numer VAT</span>
+              <span class="bl-field-value accent">${country}${vat}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Kraj</span>
-              <span class="field-value">${getCountryName(country)}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Kraj</span>
+              <span class="bl-field-value">${getCountryName(country)}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Nazwa firmy</span>
-              <span class="field-value ${name === '---' || name === '—' ? 'empty' : ''}">${name !== '---' && name !== '—' ? name : 'Brak danych (zastrzeżone)'}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Nazwa firmy</span>
+              <span class="bl-field-value ${name === '---' || name === '—' ? 'empty' : ''}">${name !== '---' && name !== '—' ? name : 'Brak danych (zastrzeżone)'}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Adres</span>
-              <span class="field-value ${address === '---' || address === '—' ? 'empty' : ''}">${address !== '---' && address !== '—' ? address.replace(/\n/g, '<br>') : 'Brak danych (zastrzeżone)'}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Adres</span>
+              <span class="bl-field-value ${address === '---' || address === '—' ? 'empty' : ''}">${address !== '---' && address !== '—' ? address.replace(/\n/g, '<br>') : 'Brak danych (zastrzeżone)'}</span>
             </div>
-          </div>
-          <div class="result-divider"></div>
-          <div class="result-grid">
-            <div class="result-field">
-              <span class="field-label">Data weryfikacji</span>
-              <span class="field-value">${requestDate}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Data weryfikacji</span>
+              <span class="bl-field-value">${requestDate}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Nr konsultacji VIES</span>
-              <span class="field-value">${consultationNumber}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Nr konsultacji VIES</span>
+              <span class="bl-field-value">${consultationNumber}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Źródło danych</span>
-              <span class="field-value">VIES · ec.europa.eu</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Źródło danych</span>
+              <span class="bl-field-value">VIES · ec.europa.eu</span>
             </div>
           </div>
-          <div class="raw-section">
-            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe (JSON)</button>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe VIES (JSON)</button>
             <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
           </div>
-        </div>
+        </div></div>
       </div>
     `;
   }
@@ -1589,58 +1590,59 @@
   function renderResultFallback(country, vat, data) {
     // vatcomply.com format
     const isValid = data.valid === true;
-    const statusClass = isValid ? 'valid' : 'invalid';
+    const pillCls = isValid ? 'ok' : 'error';
+    const headerCls = isValid ? 'ok-header' : 'err-header';
     const statusText = isValid ? 'Czynny podatnik VAT UE' : 'Niezarejestrowany / nieaktywny';
-    const statusIcon = isValid ? '✓' : '✗';
 
     const name = data.name || '—';
     const address = data.address || '—';
     const country_name = data.country?.name || getCountryName(country);
 
     document.getElementById('resultContainer').innerHTML = `
-      <div class="result-card">
-        <div class="result-header ${statusClass}">
-          <div class="status-badge">
-            <div class="status-icon">${statusIcon}</div>
-            ${statusText}
+      <div class="kreptd-card">
+        <div class="kreptd-header ${headerCls} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="kreptd-title-row">
+            <div class="kreptd-logo">🇪🇺</div>
+            <div>
+              <div class="kreptd-label">VIES</div>
+              <div class="kreptd-sublabel">VAT Information Exchange System (Komisja Europejska)</div>
+            </div>
           </div>
-          <div class="result-timestamp">${new Date().toLocaleDateString('pl-PL')}</div>
+          <div class="kreptd-status-pill ${pillCls}">${statusText}</div>
+          <span class="collapse-chevron collapsed">▾</span>
         </div>
-        <div class="result-body">
-          <div class="result-grid">
-            <div class="result-field">
-              <span class="field-label">Numer VAT</span>
-              <span class="field-value highlight">${country}${vat}</span>
+        <div class="collapsible-body collapsed"><div class="kreptd-body">
+          <div class="bl-grid">
+            <div class="bl-field">
+              <span class="bl-field-label">Numer VAT</span>
+              <span class="bl-field-value accent">${country}${vat}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Kraj</span>
-              <span class="field-value">${country_name}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Kraj</span>
+              <span class="bl-field-value">${country_name}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Nazwa firmy</span>
-              <span class="field-value ${name === '—' ? 'empty' : ''}">${name !== '—' ? name : 'Brak danych'}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Nazwa firmy</span>
+              <span class="bl-field-value ${name === '—' ? 'empty' : ''}">${name !== '—' ? name : 'Brak danych'}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Adres</span>
-              <span class="field-value ${address === '—' ? 'empty' : ''}">${address !== '—' ? address : 'Brak danych'}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Adres</span>
+              <span class="bl-field-value ${address === '—' ? 'empty' : ''}">${address !== '—' ? address : 'Brak danych'}</span>
             </div>
-          </div>
-          <div class="result-divider"></div>
-          <div class="result-grid">
-            <div class="result-field">
-              <span class="field-label">Data weryfikacji</span>
-              <span class="field-value">${new Date().toLocaleString('pl-PL')}</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Data weryfikacji</span>
+              <span class="bl-field-value">${new Date().toLocaleString('pl-PL')}</span>
             </div>
-            <div class="result-field">
-              <span class="field-label">Źródło danych</span>
-              <span class="field-value">VIES via vatcomply.com</span>
+            <div class="bl-field">
+              <span class="bl-field-label">Źródło danych</span>
+              <span class="bl-field-value">VIES via vatcomply.com</span>
             </div>
           </div>
-          <div class="raw-section">
-            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe (JSON)</button>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe VIES (JSON)</button>
             <pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>
           </div>
-        </div>
+        </div></div>
       </div>
     `;
   }
