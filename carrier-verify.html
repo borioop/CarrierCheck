@@ -2517,61 +2517,73 @@
   function renderKrs(nip, odpis) {
     const container = document.getElementById('krsContainer');
 
-    // Dane z odpisu aktualnego KRS
-    const dane = odpis?.odpis?.dane || odpis?.dane || odpis || {};
-    const nagl = dane.naglowekA || dane.naglowekD || {};
-    const inf1  = dane.daneJednostkiOrgPrzedsiebiorca || dane.daneKRS || {};
-    const organ = dane.organRejestrowy || {};
-    const adresObj = dane.adresGlownejSiedziby || {};
+    // API prs.ms.gov.pl zwraca zagnieżdżoną strukturę — obsługujemy różne warianty
+    // Struktura: odpis.odpis.dane.* lub odpis.dane.* lub odpis.*
+    const root   = odpis?.odpis || odpis || {};
+    const dane   = root?.dane || root;
 
-    const nazwaFirmy   = nagl.nazwa || inf1.firma || inf1.nazwa || odpis?.nazwa || '—';
-    const nrKrs        = nagl.numerKRS || inf1.numerKRS || odpis?.numerKRS || '—';
-    const nrNip        = nagl.nip || inf1.nip || nip;
-    const nrRegon      = nagl.regon || inf1.regon || '—';
-    const formaPrawna  = nagl.formaPrawna || inf1.formaPrawna || '—';
-    const dataRej      = nagl.dataRejestracjiWKRS || inf1.dataRejestracjiWKRS || '—';
-    const statusPodm   = nagl.statusPodmiotu || odpis?.statusPodmiotu || '—';
-    const sad          = organ.nazwa || nagl.sadRejestrowy || '—';
-    const wydzial      = organ.wydzial || '—';
+    // Nagłówki mogą być w różnych polach zależnie od typu podmiotu
+    const naglA  = dane?.naglowekA  || {};   // rejestr przedsiębiorców
+    const naglD  = dane?.naglowekD  || {};   // rejestr stowarzyszeń itd.
+    const nagl   = Object.keys(naglA).length ? naglA : naglD;
 
-    const miasto  = adresObj.miejscowosc || adresObj.miasto || '';
-    const ulica   = adresObj.ulica || '';
-    const nrBud   = adresObj.nrDomu || adresObj.numerBudynku || '';
-    const kodPocz = adresObj.kodPocztowy || '';
-    const adresStr = [ulica, nrBud, kodPocz, miasto].filter(Boolean).join(' ') || '—';
+    const dzial1 = dane?.dzial1 || {};
+    const dzial1a = dane?.dzial1?.danePodmiotu || dane?.dzial1a || {};
+    const adr    = dzial1a?.adresy?.[0] || dzial1a?.adresSiedziby || dane?.adresGlownejSiedziby || {};
 
-    const isActive = !statusPodm || statusPodm.toLowerCase().includes('aktywny') || statusPodm === '—';
+    const nazwaFirmy  = nagl?.nazwa || dzial1a?.nazwa || odpis?.nazwa || '—';
+    const nrKrs       = nagl?.numerKRS || odpis?.numerKRS || odpis?.krs || '—';
+    const nrNip       = nagl?.nip || dzial1a?.nip || nip;
+    const nrRegon     = nagl?.regon || dzial1a?.regon || '—';
+    const formaPrawna = nagl?.formaPrawna || dzial1a?.formaPrawna || '—';
+    const dataRej     = nagl?.dataRejestracjiWKRS || nagl?.dataWpisuDoKRS || '—';
+    const statusPodm  = nagl?.statusPodmiotu || odpis?.status || '';
+
+    // Adres siedziby
+    const ulica   = adr?.ulica  || adr?.ulicaNazwa  || '';
+    const nrBud   = adr?.nrDomu || adr?.numerBudynku || adr?.numerDomu || '';
+    const nrLok   = adr?.nrLokalu || adr?.numerLokalu || '';
+    const kodPocz = adr?.kodPocztowy || '';
+    const miasto  = adr?.miejscowosc || adr?.miasto || '';
+    const adresStr = [ulica, nrBud + (nrLok ? `/${nrLok}` : ''), kodPocz, miasto].filter(Boolean).join(' ') || '—';
+
+    // Sąd rejestrowy
+    const sad     = dane?.organRejestrowy?.nazwa || nagl?.sadRejestrowy || '—';
+    const wydzial = dane?.organRejestrowy?.wydzial || '';
+
+    const isActive = !statusPodm || ['', 'aktywny', 'zarejestrowany'].some(s => statusPodm.toLowerCase().includes(s));
     const pillCls   = isActive ? 'ok' : 'warn';
     const headerCls = isActive ? 'ok-header' : '';
-    const statusTxt = isActive ? 'Aktywny' : statusPodm;
+    const statusTxt = statusPodm || 'Zarejestrowany';
 
-    // Zarząd / wspólnicy
-    const zarzad = dane.organyPrzedsiebiorcy || dane.organPrzedsiebiorcy || [];
-    const zarzadHtml = Array.isArray(zarzad) && zarzad.length > 0
-      ? `<div class="ceidg-section-title">👥 Organy / Zarząd</div>
-         <div class="ceidg-grid">
-           ${zarzad.slice(0, 6).map(o => {
-             const osoba = o.nazwaSposobPrzedstawiania || o.imieNazwisko || o.nazwa || JSON.stringify(o);
-             const funk = o.funkcja || o.rodzajOrganu || '';
-             return `<div class="ceidg-field">
-               <span class="ceidg-field-label">${funk}</span>
-               <span class="ceidg-field-value">${osoba}</span>
-             </div>`;
-           }).join('')}
-         </div>`
-      : '';
+    // Zarząd / organy
+    const organy = dane?.dzial2?.organPrzedsiebiorcy || dane?.dzial2?.spolnicy || [];
+    const osoby  = Array.isArray(organy) ? organy : (organy ? [organy] : []);
+    const zarzadHtml = osoby.length > 0 ? `
+      <div class="ceidg-section-title">👥 Organy / Zarząd</div>
+      <div class="ceidg-grid">
+        ${osoby.slice(0,6).map(o => {
+          const imNaz = [o.imie1, o.imie2, o.nazwisko].filter(Boolean).join(' ')
+                     || o.nazwaSpolnicy || o.nazwa || o.imieNazwisko || '—';
+          const funk  = o.funkcja || o.rodzajOrganu || '';
+          return `<div class="ceidg-field"><span class="ceidg-field-label">${funk}</span><span class="ceidg-field-value">${imNaz}</span></div>`;
+        }).join('')}
+      </div>` : '';
 
     // PKD
-    const pkdArr = dane.pkd || [];
-    const pkdHtml = pkdArr.length > 0
-      ? `<div class="ceidg-section-title">📋 Kody PKD</div>
-         <div class="ceidg-pkd-list">
-           ${pkdArr.slice(0,12).map(p => {
-             const kod = p.kodDzialalnosci || p.kod || '';
-             const glowna = p.przewazajacaDzialalnosc === true || p.glowna;
-             return `<span class="ceidg-pkd-badge${glowna ? ' main' : ''}" title="${p.z || ''}">${kod}${glowna ? ' ★' : ''}</span>`;
-           }).join('')}
-         </div>` : '';
+    const pkdArr  = dane?.dzial3?.przedmiotDzialalnosci?.przedmiotPrzewazajacejDzialalnosci || [];
+    const pkdInne = dane?.dzial3?.przedmiotDzialalnosci?.przedmiotPozostalejDzialalnosci    || [];
+    const pkdAll  = [...(Array.isArray(pkdArr) ? pkdArr : [pkdArr].filter(Boolean)),
+                     ...(Array.isArray(pkdInne) ? pkdInne : [pkdInne].filter(Boolean))];
+    const pkdHtml = pkdAll.length > 0 ? `
+      <div class="ceidg-section-title">📋 Kody PKD</div>
+      <div class="ceidg-pkd-list">
+        ${pkdAll.slice(0,12).map(p => {
+          const kod = p.kodDzialalnosci || p.kod || '';
+          const glowna = pkdArr.includes(p);
+          return `<span class="ceidg-pkd-badge${glowna ? ' main' : ''}" title="${p.z || p.opis || ''}">${kod}${glowna ? ' ★' : ''}</span>`;
+        }).join('')}
+      </div>` : '';
 
     container.innerHTML = `
       <div class="ceidg-card">
@@ -2625,13 +2637,13 @@
             </div>
             <div class="ceidg-field" style="grid-column:1/-1">
               <span class="ceidg-field-label">Sąd rejestrowy</span>
-              <span class="ceidg-field-value">${sad}${wydzial !== '—' ? ' / ' + wydzial : ''}</span>
+              <span class="ceidg-field-value">${sad}${wydzial ? ' / ' + wydzial : ''}</span>
             </div>
           </div>
           ${zarzadHtml}
           ${pkdHtml}
           <div class="ceidg-note" style="margin-top:16px">
-            Źródło: <a href="https://api-krs.ms.gov.pl" target="_blank">api-krs.ms.gov.pl</a> (Ministerstwo Sprawiedliwości, bezpłatne API publiczne).
+            Źródło: <a href="https://prs.ms.gov.pl/krs/openApi" target="_blank">prs.ms.gov.pl</a> (Ministerstwo Sprawiedliwości — bezpłatne API publiczne).
             Pełna weryfikacja: <a href="https://ekrs.ms.gov.pl" target="_blank">ekrs.ms.gov.pl</a>
           </div>
           <div class="raw-section" style="margin-top:12px">
