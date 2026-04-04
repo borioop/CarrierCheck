@@ -673,12 +673,19 @@
   }
   .collapsible-header:hover { filter: brightness(1.12); }
 
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
   .collapse-chevron {
     font-size: 14px;
     color: var(--text-muted);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
-    margin-left: 4px;
     line-height: 1;
   }
 
@@ -1349,20 +1356,6 @@
     <p class="hero-sub">Weryfikacja NIP/VAT EU, licencji, polis ubezpieczeniowych — wszystko w jednym miejscu.</p>
   </div>
 
-  <div class="modules">
-    <button class="module-tab active" onclick="switchModule('vies')">
-      <span class="dot"></span> VIES / NIP EU
-    </button>
-    <button class="module-tab disabled" title="Wkrótce">
-      <span class="dot"></span> Licencje transportowe
-    </button>
-    <button class="module-tab disabled" title="Wkrótce">
-      <span class="dot"></span> Polisy OC/OCP
-    </button>
-    <button class="module-tab disabled" title="Wkrótce">
-      <span class="dot"></span> Biała lista VAT PL
-    </button>
-  </div>
 
   <div class="search-card">
     <div class="card-title">// Weryfikacja VAT — VIES (UE)</div>
@@ -1544,8 +1537,10 @@
               <div class="kreptd-sublabel">VAT Information Exchange System (Komisja Europejska)</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="kreptd-status-pill ${pillCls}">${statusText}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
           <div class="bl-grid">
@@ -1608,8 +1603,10 @@
               <div class="kreptd-sublabel">VAT Information Exchange System (Komisja Europejska)</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="kreptd-status-pill ${pillCls}">${statusText}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
           <div class="bl-grid">
@@ -1722,8 +1719,10 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="kreptd-status-pill warn">Sprawdzam…</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-loading">
           <div class="kreptd-loading-inner">
@@ -1782,8 +1781,10 @@
                 <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
               </div>
             </div>
-            <div class="kreptd-status-pill warn">Brak wpisu</div>
+            <div class="header-right">
+          <div class="kreptd-status-pill warn">Brak wpisu</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
           </div>
           <div class="collapsible-body collapsed"><div class="kreptd-body">
             <div class="kreptd-check-row">
@@ -1844,8 +1845,10 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="kreptd-status-pill ${statusClass}">${statusText}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
 
@@ -1930,8 +1933,10 @@
               <div class="kreptd-sublabel">Krajowy Rejestr Elektroniczny Przedsiębiorców Transportu Drogowego</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="kreptd-status-pill error">Niedostępne</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="kreptd-body">
           <div class="kreptd-check-row">
@@ -1986,8 +1991,10 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="bl-status-pill warn">Sprawdzam…</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-loading">
           <div class="bl-loading-inner">
@@ -2026,8 +2033,10 @@
                 <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
               </div>
             </div>
-            <div class="bl-status-pill error">Nie znaleziono</div>
+            <div class="header-right">
+          <div class="bl-status-pill error">Nie znaleziono</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
           </div>
           <div class="collapsible-body collapsed"><div class="bl-body">
             <div class="kreptd-check-row">
@@ -2083,8 +2092,10 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="bl-status-pill ${pillClass}">${pillText}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="bl-section-title">🏢 Dane podmiotu</div>
@@ -2148,8 +2159,10 @@
               <div class="bl-sublabel">Ministerstwo Finansów — Wykaz podatników VAT</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="bl-status-pill error">Niedostępne</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="bl-body">
           <div class="kreptd-check-row">
@@ -2202,8 +2215,10 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej (Biznes.gov.pl)</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="ceidg-status-pill info">Sprawdzam…</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-loading">
           <div class="ceidg-loading-inner">
@@ -2283,8 +2298,10 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-section-title">🏢 Dane przedsiębiorcy</div>
@@ -2349,8 +2366,10 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="ceidg-status-pill ${st.cls}">${st.text}</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="ceidg-grid">
@@ -2381,8 +2400,10 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="ceidg-status-pill error">Nie znaleziono</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
@@ -2409,8 +2430,10 @@
               <div class="ceidg-sublabel">Centralna Ewidencja i Informacja o Działalności Gospodarczej</div>
             </div>
           </div>
+          <div class="header-right">
           <div class="ceidg-status-pill error">Niedostępne</div>
           <span class="collapse-chevron collapsed">▾</span>
+        </div>
         </div>
         <div class="collapsible-body collapsed"><div class="ceidg-body">
           <div class="kreptd-check-row">
