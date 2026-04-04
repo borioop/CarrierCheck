@@ -2392,6 +2392,17 @@
   // ── CEIDG / KRS — połączona sekcja ────────────────────────────────────────
   // KRS i CEIDG są odpytywane równolegle. Wynik: KRS → CEIDG → nie znaleziono.
 
+  function ceidgStatusLabel(status) {
+    const map = {
+      'AKTYWNY': { text: 'Aktywny', cls: 'ok', valcls: 'ceidg-status-aktywny' },
+      'WYKRESLONY': { text: 'Wykreślony', cls: 'error', valcls: 'ceidg-status-wykreslony' },
+      'ZAWIESZONY': { text: 'Zawieszony', cls: 'warn', valcls: 'ceidg-status-zawieszony' },
+      'OCZEKUJE_NA_ROZPOCZECIE_DZIALANOSCI': { text: 'Oczekuje na start', cls: 'warn', valcls: '' },
+      'WYLACZNIE_W_FORMIE_SPOLKI': { text: 'Tylko jako spółka', cls: 'warn', valcls: '' },
+    };
+    return map[status] || { text: status || '—', cls: 'info', valcls: '' };
+  }
+
   async function checkRegistry(nip) {
     const container = document.getElementById('registryContainer');
     if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
