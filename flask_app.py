@@ -128,24 +128,31 @@ def ceidg():
     }
 
     try:
-        # Próba 1: endpoint /firma (zwraca pełne dane)
+        # Próba 1: endpoint /firma (singiel, pełne dane) — nip jako string
         resp = requests.get(f'{CEIDG_BASE}/firma', params={'nip': nip}, headers=headers, timeout=20)
-        print(f"[CEIDG] /firma NIP={nip} status={resp.status_code}")
+        print(f"[CEIDG] /firma NIP={nip} status={resp.status_code} body={resp.text[:300]}")
 
         if resp.status_code == 204:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
-
-        if resp.ok:
+            # 204 = brak wyników — nie zwracamy od razu, próbujemy /firmy
+            pass
+        elif resp.ok:
             data  = resp.json()
             firma = data.get('firma', [])
             if isinstance(firma, list):
                 firma = firma[0] if firma else None
             if firma:
                 return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firma})
+            # pusta lista firma[] — przechodzimy do /firmy
 
-        # Próba 2: endpoint /firmy (lista) + pobranie szczegółów przez link
-        resp2 = requests.get(f'{CEIDG_BASE}/firmy', params={'nip': nip, 'limit': 1}, headers=headers, timeout=20)
-        print(f"[CEIDG] /firmy NIP={nip} status={resp2.status_code}")
+        # Próba 2: endpoint /firmy (lista) — nip jako tablica zgodnie ze specyfikacją API
+        # API wymaga wielokrotnego parametru: ?nip=X (requests obsługuje listę krotek)
+        resp2 = requests.get(
+            f'{CEIDG_BASE}/firmy',
+            params=[('nip', nip), ('limit', 1)],
+            headers=headers,
+            timeout=20
+        )
+        print(f"[CEIDG] /firmy NIP={nip} status={resp2.status_code} body={resp2.text[:300]}")
 
         if resp2.status_code == 204:
             return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
@@ -159,11 +166,11 @@ def ceidg():
         if not firmy:
             return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
 
-        # Pobierz szczegóły przez link z odpowiedzi listy
+        # Pobierz pełne szczegóły przez link z odpowiedzi listy
         link = firmy[0].get('link')
         if link:
             resp3 = requests.get(link, headers=headers, timeout=20)
-            print(f"[CEIDG] detail link status={resp3.status_code}")
+            print(f"[CEIDG] detail link={link} status={resp3.status_code}")
             if resp3.ok:
                 data3 = resp3.json()
                 firma3 = data3.get('firma', [])
@@ -172,7 +179,7 @@ def ceidg():
                 if firma3:
                     return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firma3})
 
-        # Fallback: zwróć dane z listy (mniej szczegółowe)
+        # Fallback: dane z listy (mniej szczegółowe, ale coś zwracamy)
         return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firmy[0], 'partial': True})
 
     except requests.exceptions.Timeout:
