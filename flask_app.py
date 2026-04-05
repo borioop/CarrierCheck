@@ -194,15 +194,17 @@ def ceidg():
                 })
 
         # ── Krok 3: /firmy?nip_sc=... (NIP SPÓŁKI CYWILNEJ) ─────────────────
-        # Spółki cywilne posiadają odrębny NIP spółki (nip_sc), różny od NIP
-        # wspólników. Endpoint /firma nie obsługuje nip_sc — trzeba użyć /firmy.
+        # Spółki cywilne mają odrębny NIP spółki (nip_sc) różny od NIP wspólników.
+        # /firmy?nip_sc=... zwraca listę wpisów KAŻDEGO wspólnika tej spółki.
+        # Pole 'nazwa' każdego wpisu zawiera nazwę spółki cywilnej (np. "X i Y s.c.").
+        # Pole 'adresDzialalnosci' to adres spółki.
         resp3 = requests.get(
             f'{CEIDG_BASE}/firmy',
-            params=[('nip_sc', nip), ('limit', 5)],
+            params=[('nip_sc', nip), ('limit', 10)],
             headers=headers,
             timeout=20
         )
-        print(f"[CEIDG] /firmy nip_sc={nip} status={resp3.status_code} body={resp3.text[:300]}")
+        print(f"[CEIDG] /firmy nip_sc={nip} status={resp3.status_code} body={resp3.text[:400]}")
 
         if resp3.status_code == 204:
             return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
@@ -214,43 +216,63 @@ def ceidg():
             if not firmy3:
                 return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
 
-            # Pobierz pełne dane pierwszego wspólnika (każdy wspólnik ma wpis w CEIDG)
+            # Nazwa spółki — z pola 'nazwa' pierwszego wpisu (wspólnika)
+            nazwa_sc = firmy3[0].get('nazwa', '')
+            # Adres spółki — z adresDzialalnosci pierwszego wpisu
+            adres_sc = firmy3[0].get('adresDzialalnosci', {})
+            data_rozp = firmy3[0].get('dataRozpoczecia', '')
+
+            # Zbierz dane wszystkich wspólników — bez dodatkowych requestów HTTP
+            wspolnicy = []
+            for fw in firmy3:
+                wl = fw.get('wlasciciel', {})
+                wspolnicy.append({
+                    'imie':            wl.get('imie', ''),
+                    'nazwisko':        wl.get('nazwisko', ''),
+                    'nip_wspolnika':   wl.get('nip', ''),
+                    'regon_wspolnika': wl.get('regon', ''),
+                    'status':          fw.get('status', ''),
+                    'dataRozpoczecia': fw.get('dataRozpoczecia', ''),
+                    'link':            fw.get('link', ''),
+                })
+
+            # Pobierz pełne dane pierwszego wspólnika (pkd, telefon, email itp.)
             link3 = firmy3[0].get('link')
             firma3_detail = _ceidg_fetch_detail(link3, headers) if link3 else None
 
-            # Zbierz dane wszystkich wspólników (linki do ich wpisów)
-            wspolnicy = []
-            for f in firmy3:
-                wspolnicy.append({
-                    'imie': f.get('wlasciciel', {}).get('imie', ''),
-                    'nazwisko': f.get('wlasciciel', {}).get('nazwisko', ''),
-                    'nip_wspolnika': f.get('wlasciciel', {}).get('nip', ''),
-                    'regon_wspolnika': f.get('wlasciciel', {}).get('regon', ''),
-                    'status': f.get('status', ''),
-                    'link': f.get('link', ''),
-                })
-
-            # Wyciągnij dane spółki z pola spolki[] pierwszego wpisu
+            # Wyciągnij wpis spółki z pola spolki[] wpisu wspólnika
             spolka_info = None
             if firma3_detail:
-                spolki_list = firma3_detail.get('spolki', [])
-                for s in spolki_list:
-                    if s.get('nip') == nip or s.get('regon'):
+                for s in (firma3_detail.get('spolki') or []):
+                    if s.get('nip') == nip:
                         spolka_info = s
                         break
-                if not spolka_info and spolki_list:
-                    spolka_info = spolki_list[0]
+                if not spolka_info and firma3_detail.get('spolki'):
+                    spolka_info = firma3_detail['spolki'][0]
+
+            # Zbuduj syntetyczny obiekt spółki — frontend używa tych pól
+            firma_sc = {
+                'nazwa':             nazwa_sc,
+                'nip_sc':            nip,
+                'adresDzialalnosci': adres_sc,
+                'status':            'WYLACZNIE_W_FORMIE_SPOLKI',
+                'dataRozpoczecia':   data_rozp,
+                'pkd':               (firma3_detail or {}).get('pkd', []),
+                'pkdGlowny':         (firma3_detail or {}).get('pkdGlowny', None),
+                'email':             (firma3_detail or {}).get('email', ''),
+                'telefon':           (firma3_detail or {}).get('telefon', ''),
+                'www':               (firma3_detail or {}).get('www', ''),
+            }
 
             return jsonify({
-                'success': True,
-                'found': True,
-                'nip': nip,
-                'firma': firma3_detail or firmy3[0],
-                'partial': firma3_detail is None,
+                'success':          True,
+                'found':            True,
+                'nip':              nip,
+                'firma':            firma_sc,
                 'is_spolka_cywilna': True,
-                'nip_sc': nip,
-                'wspolnicy': wspolnicy,
-                'spolka_info': spolka_info,
+                'nip_sc':           nip,
+                'wspolnicy':        wspolnicy,
+                'spolka_info':      spolka_info,
                 'count_wspolnikow': data3.get('count', len(firmy3)),
             })
 
