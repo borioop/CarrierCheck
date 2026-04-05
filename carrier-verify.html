@@ -1788,6 +1788,249 @@
     gap: 6px;
   }
   /* ── /Karta tożsamości podmiotu ─────────────────────────────────────────── */
+
+  /* ── CRBR ────────────────────────────────────────────────────────────────── */
+  .crbr-card {
+    margin-top: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .crbr-header {
+    background: rgba(180, 60, 220, 0.13);
+    border-bottom: 1px solid rgba(180, 60, 220, 0.28);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .crbr-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .crbr-logo {
+    width: 28px; height: 28px;
+    background: rgba(180, 60, 220, 0.25);
+    border: 1px solid rgba(180, 60, 220, 0.45);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .crbr-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #d17fff;
+    letter-spacing: 0.5px;
+  }
+
+  .crbr-sublabel {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  .crbr-status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .crbr-status-pill.ok    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .crbr-status-pill.warn  { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,170,0,0.3); }
+  .crbr-status-pill.error { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,68,102,0.3); }
+  .crbr-status-pill.info  { background: rgba(180,60,220,0.12); color: #d17fff;   border: 1px solid rgba(180,60,220,0.3); }
+
+  .crbr-body {
+    background: var(--surface);
+    padding: 24px 28px;
+  }
+
+  .crbr-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .crbr-section-title:first-child { margin-top: 0; }
+
+  .crbr-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .crbr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+
+  .crbr-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .crbr-field-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .crbr-field-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+
+  .crbr-field-value.empty { color: var(--text-muted); font-style: italic; font-size: 11px; }
+  .crbr-field-value.purple { color: #d17fff; }
+  .crbr-field-value.accent { color: var(--accent); }
+
+  /* Beneficjent card */
+  .crbr-benef-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .crbr-benef-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(180, 60, 220, 0.5);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .crbr-benef-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #d17fff;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .crbr-benef-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .crbr-benef-meta strong { color: var(--text); }
+
+  .crbr-udzial-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(180, 60, 220, 0.1);
+    border: 1px solid rgba(180, 60, 220, 0.25);
+    color: #d17fff;
+    margin-top: 4px;
+    margin-right: 4px;
+  }
+
+  /* Reprezentant card */
+  .crbr-repr-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .crbr-repr-row {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 7px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,170,0,0.4);
+    border-radius: 6px;
+    line-height: 1.6;
+  }
+
+  /* Rozbieżności */
+  .crbr-rozb-row {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--warn);
+    padding: 7px 12px;
+    background: var(--warn-dim);
+    border: 1px solid rgba(255,170,0,0.2);
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+
+  .crbr-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .crbr-note a { color: #d17fff; text-decoration: none; }
+  .crbr-note a:hover { text-decoration: underline; }
+
+  .crbr-loading {
+    background: var(--surface);
+    padding: 24px 28px;
+  }
+
+  .crbr-loading-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .crbr-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: #d17fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  /* ── /CRBR ───────────────────────────────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -1869,6 +2112,7 @@
   <div id="kreptdContainer"></div>
   <div id="bialalistaContainer"></div>
   <div id="registryContainer"></div>
+  <div id="crbrContainer"></div>
 
   <div class="info-strip">
     <div class="info-item"><span class="info-dot"></span> Dane z systemu VIES (Komisja Europejska)</div>
@@ -1876,6 +2120,7 @@
     <div class="info-item"><span class="info-dot"></span> Biała Lista VAT via wl-api.mf.gov.pl (MF)</div>
     <div class="info-item"><span class="info-dot"></span> CEIDG via dane.biznes.gov.pl (MRiT)</div>
     <div class="info-item"><span class="info-dot"></span> KRS via api-krs.ms.gov.pl (MS)</div>
+    <div class="info-item"><span class="info-dot"></span> CRBR via bramka-crbr.mf.gov.pl (MF)</div>
     <div class="info-item"><span class="info-dot"></span> Weryfikacja w czasie rzeczywistym</div>
   </div>
 
@@ -1932,6 +2177,7 @@
     document.getElementById('kreptdContainer').innerHTML = '';
     document.getElementById('bialalistaContainer').innerHTML = '';
     document.getElementById('registryContainer').innerHTML = '';
+    document.getElementById('crbrContainer').innerHTML = '';
 
     // Wszystkie zapytania idą przez nasz backend — brak problemów z CORS
     const BACKEND = 'https://carriercheck-backend.onrender.com';
@@ -1965,6 +2211,7 @@
         checkKreptd(vatNumber);
         checkBialaLista(vatNumber);
         checkRegistry(vatNumber);
+        checkCrbr(vatNumber);
       }
 
     } catch (err) {
@@ -3174,6 +3421,276 @@
     }
   }
   // ── /Karta tożsamości podmiotu ────────────────────────────────────────────
+
+  // ── CRBR — Centralny Rejestr Beneficjentów Rzeczywistych ─────────────────
+  async function checkCrbr(nip) {
+    const container = document.getElementById('crbrContainer');
+    if (!/^\d{10}$/.test(nip)) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+      <div class="crbr-card">
+        <div class="crbr-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="crbr-title-row">
+            <div class="crbr-logo">👁</div>
+            <div>
+              <div class="crbr-label">CRBR</div>
+              <div class="crbr-sublabel">Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="crbr-status-pill info">Sprawdzam…</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed">
+          <div class="crbr-loading">
+            <div class="crbr-loading-inner">
+              <div class="crbr-spinner"></div>
+              Zapytanie do bramki CRBR (SOAP)…
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    const BACKEND = 'https://carriercheck-backend.onrender.com';
+    try {
+      const resp = await fetch(`${BACKEND}/crbr?nip=${encodeURIComponent(nip)}`, {
+        signal: AbortSignal.timeout(35000)
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Nieznany błąd');
+      renderCrbr(nip, json);
+    } catch (err) {
+      renderCrbrError(nip, err.message);
+    }
+  }
+
+  function renderCrbr(nip, json) {
+    const container = document.getElementById('crbrContainer');
+
+    if (!json.found || !json.spolki || json.spolki.length === 0) {
+      container.innerHTML = `
+        <div class="crbr-card">
+          <div class="crbr-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+            <div class="crbr-title-row">
+              <div class="crbr-logo">👁</div>
+              <div>
+                <div class="crbr-label">CRBR</div>
+                <div class="crbr-sublabel">Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)</div>
+              </div>
+            </div>
+            <div class="header-right">
+              <div class="crbr-status-pill warn">Brak wpisu</div>
+              <span class="collapse-chevron collapsed">▾</span>
+            </div>
+          </div>
+          <div class="collapsible-body collapsed"><div class="crbr-body">
+            <div class="kreptd-check-row">
+              <div class="check-indicator fail">✗</div>
+              <div class="check-content">
+                <div class="check-name">NIP ${nip} nie figuruje w CRBR</div>
+                <div class="check-detail">Podmiot nie jest wpisany do Centralnego Rejestru Beneficjentów Rzeczywistych lub nie jest zobowiązany do zgłoszenia. CRBR obejmuje spółki prawa handlowego, fundacje, stowarzyszenia i inne podmioty określone ustawą AML.</div>
+              </div>
+            </div>
+            <div class="crbr-note">Zweryfikuj bezpośrednio na <a href="https://crbr.podatki.gov.pl/adcrbr/#/" target="_blank">crbr.podatki.gov.pl</a></div>
+          </div></div>
+        </div>`;
+      return;
+    }
+
+    const spolki = json.spolki;
+    const hasBenef = spolki.some(s => s.beneficjenci && s.beneficjenci.length > 0);
+    const hasRozb  = spolki.some(s => s.rozbieznosci && s.rozbieznosci.filter(Boolean).length > 0);
+    const pillCls  = hasRozb ? 'warn' : 'ok';
+    const pillTxt  = hasRozb ? `Wpis z rozbieżnościami` : `Zweryfikowany · ${spolki.length} zgłoszenie${spolki.length > 1 ? 'ń' : ''}`;
+
+    const spolkiHtml = spolki.map((s, idx) => {
+      // Adres
+      const adresParts = [s.ulica, s.nrDomu, s.nrLokalu ? `lok. ${s.nrLokalu}` : '', s.kodPocztowy, s.miejscowosc].filter(Boolean);
+      const adresStr = adresParts.join(' ') || '—';
+
+      // Okres prezentacji
+      const okres = (s.dataPoczatku && s.dataKonca)
+        ? `${formatDate(s.dataPoczatku)} – ${formatDate(s.dataKonca)}`
+        : s.dataPoczatku ? `od ${formatDate(s.dataPoczatku)}` : '—';
+
+      // Beneficjenci HTML
+      const benefHtml = (s.beneficjenci || []).map(b => {
+        if (b.typ === 'grupowy') {
+          return `<div class="crbr-benef-card">
+            <div class="crbr-benef-name">🏢 Beneficjent grupowy</div>
+            <div class="crbr-benef-meta"><strong>${b.nazwa}</strong>${b.uprawnienia ? `<br>${b.uprawnienia}` : ''}</div>
+          </div>`;
+        }
+        const imieNazwisko = [b.imie, b.kolejneImiona, b.nazwisko].filter(Boolean).join(' ') || '—';
+        const udzialyHtml = (b.udzialy || []).map(u => {
+          const parts = [];
+          if (u.rodzajBezposredni) parts.push(u.rodzajBezposredni);
+          if (u.ilosc && u.jednostkaMiary) parts.push(`${u.ilosc} ${u.jednostkaMiary}`);
+          if (u.posrednie) parts.push(`pośrednie: ${u.posrednie}`);
+          if (u.inne) parts.push(u.inne);
+          return parts.map(p => `<span class="crbr-udzial-tag">${p}</span>`).join('');
+        }).join('');
+
+        const metaRows = [
+          b.pesel         ? `PESEL: <strong>${b.pesel.substring(0,4)}***${b.pesel.slice(-2)}</strong>` : '',
+          b.dataUrodzenia ? `Data ur.: <strong>${formatDate(b.dataUrodzenia)}</strong>` : '',
+          b.obywatelstwo  ? `Obywatelstwo: <strong>${b.obywatelstwo}</strong>` : '',
+          b.krajZamieszkania ? `Kraj zamieszkania: <strong>${b.krajZamieszkania}</strong>` : '',
+        ].filter(Boolean).join(' · ');
+
+        return `<div class="crbr-benef-card">
+          <div class="crbr-benef-name">👤 ${imieNazwisko}</div>
+          <div class="crbr-benef-meta">${metaRows}</div>
+          ${udzialyHtml ? `<div style="margin-top:8px">${udzialyHtml}</div>` : ''}
+        </div>`;
+      }).join('');
+
+      // Reprezentanci HTML
+      const reprHtml = (s.reprezentanci || []).map(r => {
+        const name = [r.imie, r.kolejneImiona, r.nazwisko].filter(Boolean).join(' ') || '—';
+        const peselMask = r.pesel ? ` · PESEL: ${r.pesel.substring(0,4)}***${r.pesel.slice(-2)}` : '';
+        const rodz = r.rodzajReprezentacji ? ` · ${r.rodzajReprezentacji}` : '';
+        return `<div class="crbr-repr-row">👔 <strong>${name}</strong>${peselMask}${rodz}</div>`;
+      }).join('');
+
+      // Rozbieżności HTML
+      const rozbHtml = (s.rozbieznosci || []).filter(Boolean).map(r =>
+        `<div class="crbr-rozb-row">⚠ ${r}</div>`
+      ).join('');
+
+      return `
+        ${spolki.length > 1 ? `<div class="crbr-section-title">📋 Zgłoszenie ${idx + 1} z ${spolki.length}</div>` : ''}
+        <div class="crbr-grid">
+          <div class="crbr-field" style="grid-column:1/-1">
+            <span class="crbr-field-label">Nazwa / Firma</span>
+            <span class="crbr-field-value purple">${s.nazwa || '—'}</span>
+          </div>
+          <div class="crbr-field">
+            <span class="crbr-field-label">NIP</span>
+            <span class="crbr-field-value">${s.nip || nip}</span>
+          </div>
+          <div class="crbr-field">
+            <span class="crbr-field-label">KRS</span>
+            <span class="crbr-field-value ${!s.krs ? 'empty' : ''}">${s.krs || 'Brak'}</span>
+          </div>
+          <div class="crbr-field">
+            <span class="crbr-field-label">Forma organizacyjna</span>
+            <span class="crbr-field-value">${s.opisFormyOrganizacyjnej || '—'}</span>
+          </div>
+          <div class="crbr-field" style="grid-column:1/-1">
+            <span class="crbr-field-label">Adres siedziby</span>
+            <span class="crbr-field-value">${adresStr}</span>
+          </div>
+          <div class="crbr-field">
+            <span class="crbr-field-label">Okres prezentacji zgłoszenia</span>
+            <span class="crbr-field-value">${okres}</span>
+          </div>
+          ${s.numerReferencyjny ? `
+          <div class="crbr-field">
+            <span class="crbr-field-label">Nr referencyjny</span>
+            <span class="crbr-field-value" style="font-size:11px">${s.numerReferencyjny}</span>
+          </div>` : ''}
+          ${s.skorygowane ? `
+          <div class="crbr-field" style="grid-column:1/-1">
+            <span class="crbr-field-label">Korekta</span>
+            <span class="crbr-field-value" style="color:var(--warn);font-size:11px">${s.skorygowane}</span>
+          </div>` : ''}
+        </div>
+
+        ${(s.rozbieznosci || []).filter(Boolean).length > 0 ? `
+        <div class="crbr-section-title">⚠ Rozbieżności</div>
+        ${rozbHtml}` : ''}
+
+        ${(s.beneficjenci || []).length > 0 ? `
+        <div class="crbr-section-title">👥 Beneficjenci Rzeczywiści (${s.beneficjenci.length})</div>
+        <div class="crbr-benef-list">${benefHtml}</div>` : ''}
+
+        ${(s.reprezentanci || []).length > 0 ? `
+        <div class="crbr-section-title">👔 Reprezentanci (${s.reprezentanci.length})</div>
+        <div class="crbr-repr-list">${reprHtml}</div>` : ''}
+      `;
+    }).join('<hr style="border:none;border-top:1px solid var(--border);margin:20px 0">');
+
+    container.innerHTML = `
+      <div class="crbr-card">
+        <div class="crbr-header ${hasRozb ? '' : 'ok-header'} collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="crbr-title-row">
+            <div class="crbr-logo">👁</div>
+            <div>
+              <div class="crbr-label">CRBR</div>
+              <div class="crbr-sublabel">Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="crbr-status-pill ${pillCls}">${pillTxt}</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="crbr-body">
+          ${spolkiHtml}
+          <div class="crbr-note" style="margin-top:16px">
+            Źródło: <a href="https://bramka-crbr.mf.gov.pl" target="_blank">bramka-crbr.mf.gov.pl</a> (Ministerstwo Finansów) ·
+            Pełna weryfikacja: <a href="https://crbr.podatki.gov.pl/adcrbr/#/" target="_blank">crbr.podatki.gov.pl</a>
+          </div>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe CRBR (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json, null, 2)}</pre>
+          </div>
+        </div></div>
+      </div>`;
+  }
+
+  function renderCrbrError(nip, errMsg) {
+    const container = document.getElementById('crbrContainer');
+    container.innerHTML = `
+      <div class="crbr-card">
+        <div class="crbr-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="crbr-title-row">
+            <div class="crbr-logo">👁</div>
+            <div>
+              <div class="crbr-label">CRBR</div>
+              <div class="crbr-sublabel">Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="crbr-status-pill error">Niedostępne</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="crbr-body">
+          <div class="kreptd-check-row">
+            <div class="check-indicator fail">!</div>
+            <div class="check-content">
+              <div class="check-name">Nie udało się połączyć z bramką CRBR</div>
+              <div class="check-detail">
+                Usługa SOAP Ministerstwa Finansów tymczasowo niedostępna.<br>
+                <span style="opacity:0.6;font-size:11px">${errMsg}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button onclick="checkCrbr('${nip}')" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid rgba(180,60,220,0.4);
+              background:rgba(180,60,220,0.1);color:#d17fff;
+              cursor:pointer;transition:all .2s
+            ">↻ Spróbuj ponownie</button>
+            <a href="https://crbr.podatki.gov.pl/adcrbr/#/" target="_blank" style="
+              font-family:var(--mono);font-size:12px;padding:8px 16px;
+              border-radius:8px;border:1px solid var(--border);
+              background:var(--surface2);color:var(--text-dim);
+              text-decoration:none;display:inline-flex;align-items:center;gap:6px
+            ">↗ Sprawdź ręcznie na crbr.podatki.gov.pl</a>
+          </div>
+          <div class="crbr-note" style="margin-top:14px">
+            Możesz sprawdzić bezpośrednio: <a href="https://crbr.podatki.gov.pl/adcrbr/#/" target="_blank">crbr.podatki.gov.pl</a>
+          </div>
+        </div></div>
+      </div>`;
+  }
+  // ── /CRBR ─────────────────────────────────────────────────────────────────
 
 </script>
 
