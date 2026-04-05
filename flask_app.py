@@ -293,3 +293,191 @@ def krs():
     except Exception as e:
         print(f"[KRS] wyjątek globalny: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ── CRBR proxy ────────────────────────────────────────────────────────────────
+# Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)
+# Usługa publiczna SOAP 1.2 — nie wymaga tokenu ani rejestracji.
+CRBR_URL = 'https://bramka-crbr.mf.gov.pl:5058/uslugiBiznesowe/uslugiESB/AP/ApiPrzegladoweCRBR/2022/12/01'
+CRBR_NS  = 'http://www.mf.gov.pl/uslugiBiznesowe/uslugiESB/AP/ApiPrzegladoweCRBR/2022/12/01'
+CRBR_NS1 = 'http://www.mf.gov.pl/schematy/AP/ApiPrzegladoweCRBR/2022/12/01'
+
+def _crbr_soap_body(nip: str) -> str:
+    """Buduje kopertę SOAP 1.2 z zapytaniem o NIP."""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+               xmlns:ns="{CRBR_NS}"
+               xmlns:ns1="{CRBR_NS1}">
+  <soap:Header/>
+  <soap:Body>
+    <ns:PobierzInformacjeOSpolkachIBeneficjentach>
+      <PobierzInformacjeOSpolkachIBeneficjentachDane>
+        <ns1:SzczegolyWniosku>
+          <ns1:NIP>{nip}</ns1:NIP>
+        </ns1:SzczegolyWniosku>
+      </PobierzInformacjeOSpolkachIBeneficjentachDane>
+    </ns:PobierzInformacjeOSpolkachIBeneficjentach>
+  </soap:Body>
+</soap:Envelope>"""
+
+def _xml_text(el, tag):
+    """Bezpieczne pobranie tekstu z elementu XML — obsługuje wielokrotne namespace-prefixy."""
+    import xml.etree.ElementTree as ET
+    # Szukaj po lokalnej nazwie tagu (ignoruj namespace)
+    for child in el.iter():
+        local = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+        if local == tag:
+            return (child.text or '').strip()
+    return ''
+
+def _xml_findall(root, tag):
+    """Zwraca listę elementów o danej lokalnej nazwie tagu."""
+    result = []
+    for child in root.iter():
+        local = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+        if local == tag:
+            result.append(child)
+    return result
+
+def _parse_beneficjent(b_el):
+    """Parsuje element BeneficjentRzeczywisty do słownika."""
+    def t(tag): return _xml_text(b_el, tag)
+
+    # Grupowy beneficjent (Trust)
+    nazwa_grupowego = t('NazwaBeneficjentaGrupowego')
+    if nazwa_grupowego:
+        return {
+            'typ': 'grupowy',
+            'nazwa': nazwa_grupowego,
+            'uprawnienia': t('InformacjeOUprawnieniachPrzyslugujacychBeneficjentowiGrupowemuTrust'),
+        }
+
+    # Osoba fizyczna
+    benef = {
+        'typ': 'fizyczny',
+        'imie': t('PierwszeImie'),
+        'kolejneImiona': t('KolejneImiona'),
+        'nazwisko': t('Nazwisko'),
+        'pesel': t('PESEL'),
+        'dataUrodzenia': t('DataUrodzenia'),
+        'obywatelstwo': t('Obywatelstwo'),
+        'krajZamieszkania': t('KrajZamieszkania'),
+        'udzialy': [],
+    }
+
+    for udz_el in _xml_findall(b_el, 'InformacjaOUdzialach'):
+        udz = {}
+        bezp_el = _xml_findall(udz_el, 'UprawnieniaWlascicielskieBezposrednie')
+        if bezp_el:
+            udz['rodzajBezposredni'] = _xml_text(bezp_el[0], 'RodzajUprawnienWlascicielskich')
+            udz['kodBezposredni']    = _xml_text(bezp_el[0], 'KodUprawnienWlascicielskich')
+            udz['jednostkaMiary']    = _xml_text(bezp_el[0], 'JednostkaMiary')
+            udz['ilosc']             = _xml_text(bezp_el[0], 'Ilosc')
+        posred = _xml_text(udz_el, 'UprawnieniaWlascicielskiePosrednie')
+        if posred:
+            udz['posrednie'] = posred
+        inne_el = _xml_findall(udz_el, 'InneUprawnienia')
+        if inne_el:
+            udz['inne'] = _xml_text(inne_el[0], 'RodzajInnychUprawnien') or _xml_text(inne_el[0], 'OpisInnychUprawnien')
+        benef['udzialy'].append(udz)
+
+    return benef
+
+def _parse_reprezentant(r_el):
+    def t(tag): return _xml_text(r_el, tag)
+    return {
+        'imie': t('PierwszeImie'),
+        'kolejneImiona': t('KolejneImiona'),
+        'nazwisko': t('Nazwisko'),
+        'pesel': t('PESEL'),
+        'obywatelstwo': t('Obywatelstwo'),
+        'rodzajReprezentacji': t('RodzajReprezentacji'),
+    }
+
+@app.route('/crbr')
+def crbr():
+    import xml.etree.ElementTree as ET
+
+    nip = request.args.get('nip', '').replace('-', '').replace(' ', '').strip()
+    if not nip or len(nip) != 10 or not nip.isdigit():
+        return jsonify({'success': False, 'error': 'Nieprawidłowy NIP (wymagane 10 cyfr)'}), 400
+
+    soap_body = _crbr_soap_body(nip)
+    headers = {
+        'Content-Type': 'application/soap+xml; charset=utf-8',
+        'SOAPAction': f'{CRBR_NS}/PobierzInformacjeOSpolkachIBeneficjentach',
+    }
+
+    try:
+        resp = requests.post(CRBR_URL, data=soap_body.encode('utf-8'), headers=headers, timeout=30)
+        print(f"[CRBR] NIP={nip} status={resp.status_code} body={resp.text[:500]}")
+
+        if not resp.ok:
+            return jsonify({'success': False, 'error': f'HTTP {resp.status_code} z bramki CRBR'}), 502
+
+        # Parsuj XML
+        root = ET.fromstring(resp.content)
+
+        # Sprawdź Status
+        status = _xml_text(root, 'Status')
+        if status == 'BrakInformacji':
+            return jsonify({'success': True, 'found': False, 'nip': nip, 'status': status})
+        if status == 'BladFormalny':
+            return jsonify({'success': False, 'error': 'BladFormalny — niepoprawna konstrukcja zapytania', 'nip': nip}), 400
+
+        # Parsuj listę spółek
+        spolki = []
+        for spolka_el in _xml_findall(root, 'SpolkaIBeneficjenci'):
+            def t(tag): return _xml_text(spolka_el, tag)
+            spolka = {
+                'nazwa':                  t('Nazwa'),
+                'nip':                    t('NIP'),
+                'krs':                    t('KRS'),
+                'kodFormyOrganizacyjnej': t('KodFormyOrganizacyjnej'),
+                'opisFormyOrganizacyjnej':t('OpisFormyOrganizacyjnej'),
+                'kodPocztowy':            t('KodPocztowy'),
+                'miejscowosc':            t('Miejscowosc'),
+                'ulica':                  t('Ulica'),
+                'nrDomu':                 t('NrDomu'),
+                'nrLokalu':               t('NrLokalu'),
+                'kraj':                   t('Kraj'),
+                'dataPoczatku':           t('DataPoczatkuPrezentacjiZgloszenia'),
+                'dataKonca':              t('DataKoncaPrezentacjiZgloszenia'),
+                'skorygowane':            t('Skorygowane'),
+                'numerReferencyjny':      t('NumerReferencyjny'),
+                'beneficjenci': [],
+                'reprezentanci': [],
+                'rozbieznosci': [],
+            }
+
+            # Beneficjenci
+            for b_el in _xml_findall(spolka_el, 'BeneficjentRzeczywisty'):
+                spolka['beneficjenci'].append(_parse_beneficjent(b_el))
+
+            # Reprezentanci
+            for r_el in _xml_findall(spolka_el, 'Reprezentant'):
+                spolka['reprezentanci'].append(_parse_reprezentant(r_el))
+
+            # Rozbieżności
+            for rb_el in _xml_findall(spolka_el, 'InformacjaORozbieznosciach'):
+                spolka['rozbieznosci'].append(_xml_text(rb_el, 'InformacjaDlaZainteresowanego'))
+
+            spolki.append(spolka)
+
+        return jsonify({
+            'success': True,
+            'found': len(spolki) > 0,
+            'nip': nip,
+            'status': status or 'IstniejaInformacje',
+            'spolki': spolki,
+        })
+
+    except ET.ParseError as e:
+        print(f"[CRBR] XML parse error: {e} — body: {resp.text[:400]}")
+        return jsonify({'success': False, 'error': f'Błąd parsowania XML: {str(e)}'}), 500
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (bramka CRBR niedostępna)'}), 504
+    except requests.exceptions.ConnectionError as e:
+        return jsonify({'success': False, 'error': f'Błąd połączenia z bramką CRBR: {str(e)}'}), 502
+    except Exception as e:
+        print(f"[CRBR] wyjątek globalny: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
