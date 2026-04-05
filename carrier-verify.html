@@ -2972,9 +2972,11 @@
 
     const krsFound   = krsJson?.success  && krsJson?.found;
     const ceidgFound = ceidgJson?.success && ceidgJson?.found && ceidgJson?.firma;
+    const isSC       = ceidgJson?.is_spolka_cywilna === true;
 
-    if (krsFound)        renderRegistryKrs(nip, krsJson, ceidgJson);
-    else if (ceidgFound) renderRegistryCeidg(nip, ceidgJson.firma, krsJson);
+    if (krsFound)             renderRegistryKrs(nip, krsJson, ceidgJson);
+    else if (isSC)            renderRegistrySpolkaCywilna(nip, ceidgJson);
+    else if (ceidgFound)      renderRegistryCeidg(nip, ceidgJson.firma, krsJson);
     else {
       // żadne źródło nie znalazło — oznacz oba jako nie dotyczy (brak w rejestrach)
       updateIdentitySource('krs',   null);
@@ -3130,7 +3132,7 @@
             <div class="check-indicator info">i</div>
             <div class="check-content">
               <div class="check-name">KRS — nie dotyczy</div>
-              <div class="check-detail">Podmiot to jednoosobowa działalność gospodarcza — nie podlega rejestracji w KRS. KRS dotyczy spółek.</div>
+              <div class="check-detail">Podmiot to jednoosobowa działalność gospodarcza — nie podlega rejestracji w KRS. KRS dotyczy spółek prawa handlowego.</div>
             </div>
           </div>
           <div class="ceidg-note" style="margin-top:16px">Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (MRiT) · Pełna weryfikacja: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl</a></div>
@@ -3142,7 +3144,86 @@
       </div></div>`;
   }
 
-  function renderRegistryNotFound(nip, krsErr, ceidgErr) {
+  function renderRegistrySpolkaCywilna(nip, json) {
+    const container = document.getElementById('registryContainer');
+    const f          = json.firma || {};
+    const wspolnicy  = json.wspolnicy || [];
+    const adres      = f.adresDzialalnosci || {};
+    const adresStr   = [adres.ulica, adres.budynek ? `${adres.budynek}${adres.lokal?'/'+adres.lokal:''}` : '', adres.kod, adres.miasto].filter(Boolean).join(' ') || '—';
+    const nazwaSC    = f.nazwa || '—';
+    const dataRozp   = f.dataRozpoczecia ? formatDate(f.dataRozpoczecia) : '—';
+    const pkdMain    = f.pkdGlowny ? f.pkdGlowny.kod : null;
+    const pkdAll     = (f.pkd || []).filter((p,i,a) => a.findIndex(x=>x.kod===p.kod)===i);
+    const pkdHtml    = pkdAll.length > 0
+      ? `<div class="ceidg-section-title">📋 Kody PKD</div><div class="ceidg-pkd-list">${pkdAll.map(p=>`<span class="ceidg-pkd-badge${p.kod===pkdMain?' main':''}" title="${p.nazwa||''}">${p.kod}${p.kod===pkdMain?' ★':''}</span>`).join('')}</div>`
+      : '';
+
+    // Buduj listę wspólników
+    const wspolnicyHtml = wspolnicy.length > 0
+      ? `<div class="ceidg-section-title" style="margin-top:16px">👥 Wspólnicy spółki cywilnej</div>
+         <div class="krs-person-list">${wspolnicy.map(w => {
+           const imNazw = [w.imie, w.nazwisko].filter(Boolean).join(' ') || '—';
+           const nipW   = w.nip_wspolnika ? ` · NIP: ${w.nip_wspolnika}` : '';
+           const stW    = w.status === 'WYLACZNIE_W_FORMIE_SPOLKI' ? ' · <em style="color:var(--warn)">wyłącznie spółka</em>'
+                        : w.status === 'AKTYWNY'                   ? ' · <em style="color:var(--accent)">aktywny</em>'
+                        : w.status === 'ZAWIESZONY'                ? ' · <em style="color:var(--warn)">zawieszony</em>'
+                        : w.status === 'WYKRESLONY'                ? ' · <em style="color:var(--danger)">wykreślony</em>' : '';
+           return `<div class="krs-person">${imNazw}${nipW}${stW}</div>`;
+         }).join('')}</div>`
+      : '';
+
+    // Przekaż do karty tożsamości
+    updateIdentitySource('ceidg', {
+      nazwa: nazwaSC,
+      nip:   nip,
+      adres: adresStr !== '—' ? adresStr : null,
+    });
+    updateIdentitySource('krs', null);
+
+    container.innerHTML = `
+      <div class="ceidg-card">
+        <div class="ceidg-header ok-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
+          <div class="ceidg-title-row">
+            <div class="ceidg-logo">🤝</div>
+            <div>
+              <div class="ceidg-label">CEIDG / KRS</div>
+              <div class="ceidg-sublabel">Znaleziono w CEIDG · Spółka cywilna (s.c.)</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="ceidg-status-pill ok">Aktywna · s.c. · CEIDG</div>
+            <span class="collapse-chevron collapsed">▾</span>
+          </div>
+        </div>
+        <div class="collapsible-body collapsed"><div class="ceidg-body">
+          <div class="ceidg-section-title">🤝 Spółka cywilna (s.c.)</div>
+          <div class="ceidg-grid">
+            <div class="ceidg-field" style="grid-column:1/-1"><span class="ceidg-field-label">Nazwa spółki</span><span class="ceidg-field-value cblue">${nazwaSC}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">NIP spółki</span><span class="ceidg-field-value">${nip}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">Liczba wspólników</span><span class="ceidg-field-value">${json.count_wspolnikow || wspolnicy.length}</span></div>
+            <div class="ceidg-field"><span class="ceidg-field-label">Data rozpoczęcia</span><span class="ceidg-field-value">${dataRozp}</span></div>
+            <div class="ceidg-field" style="grid-column:1/-1"><span class="ceidg-field-label">Adres działalności</span><span class="ceidg-field-value">${adresStr}</span></div>
+            ${f.email  ?`<div class="ceidg-field"><span class="ceidg-field-label">E-mail</span><span class="ceidg-field-value">${f.email}</span></div>`:''}
+            ${f.telefon?`<div class="ceidg-field"><span class="ceidg-field-label">Telefon</span><span class="ceidg-field-value">${f.telefon}</span></div>`:''}
+            ${f.www    ?`<div class="ceidg-field"><span class="ceidg-field-label">Strona WWW</span><span class="ceidg-field-value">${f.www}</span></div>`:''}
+          </div>
+          ${wspolnicyHtml}
+          ${pkdHtml}
+          <div class="kreptd-check-row" style="margin-top:12px">
+            <div class="check-indicator info">i</div>
+            <div class="check-content">
+              <div class="check-name">KRS — nie dotyczy spółek cywilnych</div>
+              <div class="check-detail">Spółka cywilna (s.c.) nie jest wpisana do KRS. Każdy wspólnik figuruje osobno w CEIDG ze statusem „wyłącznie w formie spółki".</div>
+            </div>
+          </div>
+          <div class="ceidg-note" style="margin-top:16px">Źródło: <a href="https://dane.biznes.gov.pl" target="_blank">dane.biznes.gov.pl</a> (MRiT) · Pełna weryfikacja: <a href="https://www.biznes.gov.pl/pl/wyszukiwarka-firm" target="_blank">biznes.gov.pl</a></div>
+          <div class="raw-section" style="margin-top:12px">
+            <button class="raw-toggle" onclick="toggleRaw(this)">Pokaż dane surowe CEIDG (JSON)</button>
+            <pre class="raw-data">${JSON.stringify(json, null, 2)}</pre>
+          </div>
+        </div>
+      </div></div>`;
+  }
     const container = document.getElementById('registryContainer');
     const krsMsg  = krsErr   ? `Błąd API KRS: ${krsErr}`   : 'Nie znaleziono w KRS';
     const ceidgMsg= ceidgErr ? `Błąd API CEIDG: ${ceidgErr}`: 'Nie znaleziono w CEIDG';
