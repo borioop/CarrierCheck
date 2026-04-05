@@ -1527,6 +1527,267 @@
     border-radius: 6px;
     line-height: 1.6;
   }
+
+  /* ── Karta tożsamości podmiotu ──────────────────────────────────────────── */
+  .identity-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+  }
+
+  .identity-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #00aaff, var(--accent));
+    background-size: 200%;
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes shimmer { to { background-position: 200% center; } }
+
+  .identity-header {
+    padding: 20px 28px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .identity-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .identity-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .identity-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .identity-subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  .identity-overall {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .identity-overall.all-ok {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .identity-overall.has-warn {
+    background: var(--warn-dim);
+    color: var(--warn);
+    border: 1px solid rgba(255,170,0,0.3);
+  }
+
+  .identity-overall.has-conflict {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(255,68,102,0.3);
+  }
+
+  .identity-overall.loading {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .identity-body {
+    padding: 20px 28px 24px;
+  }
+
+  .identity-field-block {
+    margin-bottom: 18px;
+  }
+
+  .identity-field-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .identity-field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .identity-field-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .identity-consensus {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: var(--mono);
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    word-break: break-word;
+  }
+
+  .identity-consensus.conflict {
+    border-left-color: var(--danger);
+    background: rgba(255,68,102,0.07);
+  }
+
+  .identity-consensus.warn {
+    border-left-color: var(--warn);
+    background: rgba(255,170,0,0.07);
+  }
+
+  .identity-consensus.empty {
+    border-left-color: var(--text-muted);
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  .identity-sources {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .identity-source-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .identity-source-chip.match {
+    border-color: rgba(0,229,160,0.35);
+    background: rgba(0,229,160,0.06);
+    color: var(--accent);
+  }
+
+  .identity-source-chip.differs {
+    border-color: rgba(255,170,0,0.35);
+    background: rgba(255,170,0,0.06);
+    color: var(--warn);
+  }
+
+  .identity-source-chip.conflict {
+    border-color: rgba(255,68,102,0.35);
+    background: rgba(255,68,102,0.06);
+    color: var(--danger);
+  }
+
+  .identity-source-chip.missing {
+    opacity: 0.45;
+  }
+
+  .identity-source-chip .chip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .identity-source-chip .chip-val {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .identity-loading-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px 0;
+  }
+
+  .identity-mini-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .identity-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .identity-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  /* ── /Karta tożsamości podmiotu ─────────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -1603,6 +1864,7 @@
     </div>
   </div>
 
+  <div id="identityContainer"></div>
   <div id="resultContainer"></div>
   <div id="kreptdContainer"></div>
   <div id="bialalistaContainer"></div>
@@ -1665,6 +1927,7 @@
     }
 
     setLoading(true);
+    document.getElementById('identityContainer').innerHTML = '';
     document.getElementById('resultContainer').innerHTML = '';
     document.getElementById('kreptdContainer').innerHTML = '';
     document.getElementById('bialalistaContainer').innerHTML = '';
@@ -1693,6 +1956,12 @@
       }
       addHistory(countryCode, vatNumber, data);
       if (countryCode === 'PL') {
+        // Inicjalizuj kartę tożsamości — będzie zbierać dane ze wszystkich źródeł
+        initIdentityCard(vatNumber);
+        // Przekaż dane VIES do karty tożsamości
+        const viesNazwa = data.name || data.traderName || null;
+        const viesAdres = data.address || data.traderAddress || null;
+        updateIdentitySource('vies', { nazwa: viesNazwa, adres: viesAdres, nip: vatNumber });
         checkKreptd(vatNumber);
         checkBialaLista(vatNumber);
         checkRegistry(vatNumber);
@@ -2215,6 +2484,8 @@
     const container = document.getElementById('bialalistaContainer');
 
     if (!json.found || !json.result) {
+      // Brak danych BL — zaktualizuj kartę tożsamości
+      updateIdentitySource('bl', { nazwa: null, nip: nip, adres: null });
       container.innerHTML = `
         <div class="bl-card">
           <div class="bl-header err-header collapsible-header" onclick="toggleSection(this.querySelector('.collapse-chevron'))">
@@ -2260,6 +2531,13 @@
     const requestDate = json.requestDateTime
       ? json.requestDateTime.replace('T', ' ').substring(0, 16)
       : new Date().toLocaleString('pl-PL');
+
+    // Przekaż dane do karty tożsamości
+    updateIdentitySource('bl', {
+      nazwa: s.name || null,
+      nip: s.nip || nip,
+      adres: [s.workingAddress, s.residenceAddress].find(Boolean) || null
+    });
 
     const isActive = (statusVat || '').toLowerCase().includes('czynny');
     const pillClass = isActive ? 'ok' : 'warn';
@@ -2340,6 +2618,8 @@
   }
 
   function renderBialaListaError(nip, errMsg) {
+    // Błąd API — oznacz BL jako brak danych w karcie tożsamości
+    updateIdentitySource('bl', { nazwa: null, nip: nip, adres: null });
     const container = document.getElementById('bialalistaContainer');
     container.innerHTML = `
       <div class="bl-card">
@@ -2448,7 +2728,12 @@
 
     if (krsFound)        renderRegistryKrs(nip, krsJson, ceidgJson);
     else if (ceidgFound) renderRegistryCeidg(nip, ceidgJson.firma, krsJson);
-    else                 renderRegistryNotFound(nip, krsErr, ceidgErr);
+    else {
+      // żadne źródło nie znalazło — oznacz oba jako brak danych
+      updateIdentitySource('krs',   { nazwa: null, nip: nip, adres: null });
+      updateIdentitySource('ceidg', { nazwa: null, nip: nip, adres: null });
+      renderRegistryNotFound(nip, krsErr, ceidgErr);
+    }
   }
 
   function renderRegistryKrs(nip, json, ceidgJson) {
@@ -2472,6 +2757,15 @@
     const formaPr = podmiot.formaPrawna || '—';
     const adresParts = [adresObj.ulica, adresObj.nrDomu, adresObj.kodPocztowy, adresObj.miejscowosc || siedzibaObj.miejscowosc].filter(Boolean);
     const adresStr = adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || '—');
+
+    // Przekaż dane KRS do karty tożsamości
+    updateIdentitySource('krs', {
+      nazwa: podmiot.nazwa || json.nazwa || null,
+      nip: identyf.nip || nip,
+      adres: adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || null)
+    });
+    // CEIDG nie dotyczy spółek KRS
+    updateIdentitySource('ceidg', { nazwa: null, nip: nip, adres: null });
     const kapitalWart = (kapital.wysokoscKapitaluZakladowego || {}).wartosc;
     const kapitalWal  = (kapital.wysokoscKapitaluZakladowego || {}).waluta || 'PLN';
     const kapitalStr  = kapitalWart ? `${Number(kapitalWart.replace(',','.').replace(' ','')).toLocaleString('pl-PL')} ${kapitalWal}` : null;
@@ -2531,6 +2825,15 @@
     const adresStr = [adres.ulica, adres.budynek?`${adres.budynek}${adres.lokal?'/'+adres.lokal:''}`:'' , adres.kod, adres.miasto].filter(Boolean).join(' ') || '—';
     const wl = f.wlasciciel || {};
     const nazwaPelna = f.nazwa || [wl.imie, wl.nazwisko].filter(Boolean).join(' ') || '—';
+
+    // Przekaż dane CEIDG do karty tożsamości
+    updateIdentitySource('ceidg', {
+      nazwa: f.nazwa || [wl.imie, wl.nazwisko].filter(Boolean).join(' ') || null,
+      nip: wl.nip || nip,
+      adres: [adres.ulica, adres.budynek, adres.kod, adres.miasto].filter(Boolean).join(' ') || null
+    });
+    // KRS nie dotyczy JDG
+    updateIdentitySource('krs', { nazwa: null, nip: nip, adres: null });
     const dataRozp  = f.dataRozpoczecia ? formatDate(f.dataRozpoczecia) : '—';
     const dataZaw   = f.dataZawieszenia ? formatDate(f.dataZawieszenia) : null;
     const dataWykr  = f.dataWykreslenia ? formatDate(f.dataWykreslenia) : null;
@@ -2659,6 +2962,209 @@
     };
     return names[code] || code;
   }
+
+  // ── Karta tożsamości podmiotu ─────────────────────────────────────────────
+  // Zbiera dane ze wszystkich źródeł i inteligentnie porównuje nazwę, NIP, adres.
+
+  // Stan zbierania danych ze źródeł
+  let _identityData = {};
+  let _identityNip = '';
+  const IDENTITY_SOURCES = ['vies', 'bl', 'krs', 'ceidg'];
+  const SOURCE_LABELS = { vies: 'VIES', bl: 'Biała Lista', krs: 'KRS', ceidg: 'CEIDG' };
+
+  function initIdentityCard(nip) {
+    _identityNip = nip;
+    _identityData = {};
+    const container = document.getElementById('identityContainer');
+    container.innerHTML = `
+      <div class="identity-card">
+        <div class="identity-header">
+          <div class="identity-header-left">
+            <div class="identity-icon">🪪</div>
+            <div>
+              <div class="identity-title">Karta tożsamości podmiotu</div>
+              <div class="identity-subtitle">Porównanie danych ze wszystkich źródeł · NIP ${nip}</div>
+            </div>
+          </div>
+          <div class="identity-overall loading" id="identityOverall">
+            <div class="identity-mini-spinner"></div> Ładowanie…
+          </div>
+        </div>
+        <div class="identity-body" id="identityBody">
+          <div class="identity-loading-row">
+            <div class="identity-mini-spinner"></div>
+            Oczekiwanie na dane z VIES, Białej Listy, KRS/CEIDG…
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function normalizeText(s) {
+    if (!s || s === '—') return '';
+    return s
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // usuń znaki diakrytyczne
+      .replace(/\s+/g, ' ')
+      .replace(/[.,\-\/]/g, ' ')
+      .trim();
+  }
+
+  function textsMatch(a, b) {
+    if (!a || !b) return null; // brak danych — nie można porównać
+    const na = normalizeText(a);
+    const nb = normalizeText(b);
+    if (na === nb) return 'exact';
+    // Sprawdź czy jeden zawiera drugi (partial match — np. skrócona nazwa)
+    if (na.includes(nb) || nb.includes(na)) return 'partial';
+    // Sprawdź podobieństwo Jaccarda na tokenach
+    const ta = new Set(na.split(' ').filter(t => t.length > 2));
+    const tb = new Set(nb.split(' ').filter(t => t.length > 2));
+    const intersection = [...ta].filter(t => tb.has(t)).length;
+    const union = new Set([...ta, ...tb]).size;
+    const jaccard = union ? intersection / union : 0;
+    if (jaccard >= 0.6) return 'similar';
+    if (jaccard >= 0.3) return 'partial';
+    return 'different';
+  }
+
+  function updateIdentitySource(sourceKey, data) {
+    _identityData[sourceKey] = data;
+    renderIdentityCard();
+  }
+
+  function renderIdentityCard() {
+    const container = document.getElementById('identityBody');
+    const overallEl = document.getElementById('identityOverall');
+    if (!container || !overallEl) return;
+
+    const sources = _identityData;
+    const available = Object.keys(sources);
+    if (available.length === 0) return;
+
+    // ── Zbierz wartości z każdego źródła ──
+    const fields = ['nazwa', 'nip', 'adres'];
+    const fieldLabels = { nazwa: 'Nazwa / Firma', nip: 'NIP', adres: 'Adres' };
+    const fieldIcons  = { nazwa: '🏢', nip: '🔢', adres: '📍' };
+
+    // Dla każdego pola: zbierz wszystkie niepuste wartości
+    const fieldValues = {};
+    for (const f of fields) {
+      fieldValues[f] = {};
+      for (const src of IDENTITY_SOURCES) {
+        const val = sources[src]?.[f];
+        fieldValues[f][src] = (val && val !== '—' && val.trim() !== '') ? val : null;
+      }
+    }
+
+    // ── Ustal konsensus dla każdego pola ──
+    function getConsensus(vals) {
+      const nonNull = Object.entries(vals).filter(([,v]) => v !== null);
+      if (nonNull.length === 0) return { text: null, status: 'empty', chips: [] };
+
+      const reference = nonNull[0][1];
+      let allMatch = true;
+      let hasDifference = false;
+      let hasConflict = false;
+
+      const chips = IDENTITY_SOURCES.map(src => {
+        const val = vals[src];
+        if (!val) return { src, val: null, status: 'missing' };
+        const cmp = textsMatch(reference, val);
+        if (cmp === 'exact') return { src, val, status: 'match' };
+        if (cmp === 'partial' || cmp === 'similar') {
+          hasDifference = true;
+          return { src, val, status: 'differs' };
+        }
+        // Sprawdź też względem innych niepustych
+        let anyMatch = false;
+        for (const [,v2] of nonNull) {
+          const c2 = textsMatch(val, v2);
+          if (c2 === 'exact' || c2 === 'similar' || c2 === 'partial') { anyMatch = true; break; }
+        }
+        if (!anyMatch) {
+          hasConflict = true;
+          return { src, val, status: 'conflict' };
+        }
+        hasDifference = true;
+        return { src, val, status: 'differs' };
+      });
+
+      // Konsensus = najczęściej powtarzająca się wartość (po normalizacji)
+      const freq = {};
+      for (const { val } of chips.filter(c => c.val)) {
+        const n = normalizeText(val);
+        freq[n] = (freq[n] || 0) + 1;
+      }
+      const topNorm = Object.entries(freq).sort((a,b) => b[1]-a[1])[0]?.[0];
+      const consensusVal = nonNull.find(([,v]) => normalizeText(v) === topNorm)?.[1] || reference;
+
+      let status = 'ok';
+      if (hasConflict) status = 'conflict';
+      else if (hasDifference) status = 'warn';
+
+      return { text: consensusVal, status, chips };
+    }
+
+    const consensuses = {};
+    let globalStatus = 'ok';
+    for (const f of fields) {
+      consensuses[f] = getConsensus(fieldValues[f]);
+      if (consensuses[f].status === 'conflict') globalStatus = 'conflict';
+      else if (consensuses[f].status === 'warn' && globalStatus !== 'conflict') globalStatus = 'warn';
+    }
+
+    // Sprawdź czy wszystkie źródła odpowiedziały (czekamy na 4: vies, bl, krs lub ceidg)
+    const responded = available.length;
+    const stillLoading = responded < 3; // przynajmniej 3 źródła muszą odpowiedzieć
+
+    // ── Render ──
+    const fieldHtml = fields.map(f => {
+      const con = consensuses[f];
+      const conClass = con.status === 'conflict' ? 'conflict' : con.status === 'warn' ? 'warn' : con.text ? '' : 'empty';
+      const conIcon = con.status === 'conflict' ? '⚠' : con.status === 'warn' ? '~' : con.text ? '✓' : '';
+      const conText = con.text || 'Brak danych we wszystkich źródłach';
+
+      const chipsHtml = con.chips
+        .filter(c => c.status !== 'missing' || con.chips.some(x => x.status !== 'missing'))
+        .map(c => {
+          const label = SOURCE_LABELS[c.src];
+          const shortVal = c.val
+            ? (c.val.length > 35 ? c.val.substring(0,33) + '…' : c.val)
+            : '—';
+          const statusCls = c.status;
+          return `<div class="identity-source-chip ${statusCls}" title="${c.val || 'Brak danych'}">
+            <span class="chip-dot"></span>
+            <strong>${label}</strong>
+            <span class="chip-val">${shortVal}</span>
+          </div>`;
+        }).join('');
+
+      return `
+        <div class="identity-field-block">
+          <div class="identity-field-label">${fieldIcons[f]} ${fieldLabels[f]}</div>
+          <div class="identity-consensus ${conClass}">
+            ${con.text ? `<span style="opacity:0.5;font-size:11px">${conIcon}</span>` : ''}
+            ${conText}
+          </div>
+          <div class="identity-sources">${chipsHtml}</div>
+        </div>`;
+    }).join(`<div class="identity-divider"></div>`);
+
+    container.innerHTML = fieldHtml + `
+      <div class="identity-note">
+        ${stillLoading ? '<div class="identity-mini-spinner"></div> Oczekiwanie na pozostałe źródła…' : ''}
+        <span style="margin-left:auto;opacity:0.5">Porównanie normalizowane (bez wielkości liter, diakrytyków)</span>
+      </div>`;
+
+    // Aktualizuj ogólny status
+    if (!stillLoading) {
+      const cls = globalStatus === 'conflict' ? 'has-conflict' : globalStatus === 'warn' ? 'has-warn' : 'all-ok';
+      const icon = globalStatus === 'conflict' ? '⚠ Rozbieżności danych' : globalStatus === 'warn' ? '~ Drobne różnice' : '✓ Dane spójne';
+      overallEl.className = `identity-overall ${cls}`;
+      overallEl.innerHTML = icon;
+    }
+  }
+  // ── /Karta tożsamości podmiotu ────────────────────────────────────────────
 
 </script>
 
