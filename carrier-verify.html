@@ -2729,9 +2729,9 @@
     if (krsFound)        renderRegistryKrs(nip, krsJson, ceidgJson);
     else if (ceidgFound) renderRegistryCeidg(nip, ceidgJson.firma, krsJson);
     else {
-      // żadne źródło nie znalazło — oznacz oba jako brak danych
-      updateIdentitySource('krs',   { nazwa: null, nip: nip, adres: null });
-      updateIdentitySource('ceidg', { nazwa: null, nip: nip, adres: null });
+      // żadne źródło nie znalazło — oznacz oba jako nie dotyczy (brak w rejestrach)
+      updateIdentitySource('krs',   null);
+      updateIdentitySource('ceidg', null);
       renderRegistryNotFound(nip, krsErr, ceidgErr);
     }
   }
@@ -2765,7 +2765,7 @@
       adres: adresParts.length ? adresParts.join(' ') : (siedzibaObj.miejscowosc || null)
     });
     // CEIDG nie dotyczy spółek KRS
-    updateIdentitySource('ceidg', { nazwa: null, nip: nip, adres: null });
+    updateIdentitySource('ceidg', null);
     const kapitalWart = (kapital.wysokoscKapitaluZakladowego || {}).wartosc;
     const kapitalWal  = (kapital.wysokoscKapitaluZakladowego || {}).waluta || 'PLN';
     const kapitalStr  = kapitalWart ? `${Number(kapitalWart.replace(',','.').replace(' ','')).toLocaleString('pl-PL')} ${kapitalWal}` : null;
@@ -2833,7 +2833,7 @@
       adres: [adres.ulica, adres.budynek, adres.kod, adres.miasto].filter(Boolean).join(' ') || null
     });
     // KRS nie dotyczy JDG
-    updateIdentitySource('krs', { nazwa: null, nip: nip, adres: null });
+    updateIdentitySource('krs', null);
     const dataRozp  = f.dataRozpoczecia ? formatDate(f.dataRozpoczecia) : '—';
     const dataZaw   = f.dataZawieszenia ? formatDate(f.dataZawieszenia) : null;
     const dataWykr  = f.dataWykreslenia ? formatDate(f.dataWykreslenia) : null;
@@ -3003,32 +3003,42 @@
     if (!s || s === '—') return '';
     return s
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // usuń znaki diakrytyczne
-      .replace(/\s+/g, ' ')
-      .replace(/[.,\-\/]/g, ' ')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // usuń diakrytyki
+      .replace(/[,.\-\/\\]/g, ' ')                         // przecinki, kropki → spacja
+      .replace(/\s+/g, ' ')                                // wielokrotne spacje → jedna
       .trim();
   }
 
-  function textsMatch(a, b) {
-    if (!a || !b) return null; // brak danych — nie można porównać
-    const na = normalizeText(a);
-    const nb = normalizeText(b);
+  // Specjalna normalizacja adresu — sklejenia typu "350A" i "350 A" traktuj tak samo
+  function normalizeAddr(s) {
+    if (!s) return '';
+    return normalizeText(s)
+      .replace(/(\d+)\s+([a-z])\b/g, '$1$2')   // "350 A" → "350a"
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function textsMatch(a, b, isAddr) {
+    if (!a || !b) return null;
+    const na = isAddr ? normalizeAddr(a) : normalizeText(a);
+    const nb = isAddr ? normalizeAddr(b) : normalizeText(b);
     if (na === nb) return 'exact';
-    // Sprawdź czy jeden zawiera drugi (partial match — np. skrócona nazwa)
     if (na.includes(nb) || nb.includes(na)) return 'partial';
-    // Sprawdź podobieństwo Jaccarda na tokenach
-    const ta = new Set(na.split(' ').filter(t => t.length > 2));
-    const tb = new Set(nb.split(' ').filter(t => t.length > 2));
+    const ta = new Set(na.split(' ').filter(t => t.length > 1));
+    const tb = new Set(nb.split(' ').filter(t => t.length > 1));
     const intersection = [...ta].filter(t => tb.has(t)).length;
     const union = new Set([...ta, ...tb]).size;
     const jaccard = union ? intersection / union : 0;
-    if (jaccard >= 0.6) return 'similar';
-    if (jaccard >= 0.3) return 'partial';
+    if (jaccard >= 0.75) return 'exact';   // adresy z małą różnicą formatowania → exact
+    if (jaccard >= 0.5)  return 'similar';
+    if (jaccard >= 0.3)  return 'partial';
     return 'different';
   }
 
+  // sourceKey: 'vies'|'bl'|'krs'|'ceidg'
+  // data: { nazwa, nip, adres }  LUB  null oznacza "nie dotyczy tego podmiotu"
   function updateIdentitySource(sourceKey, data) {
-    _identityData[sourceKey] = data;
+    _identityData[sourceKey] = data; // null = "nie dotyczy", {} z nullami = "brak danych z API"
     renderIdentityCard();
   }
 
@@ -3041,124 +3051,123 @@
     const available = Object.keys(sources);
     if (available.length === 0) return;
 
-    // ── Zbierz wartości z każdego źródła ──
+    // Źródła oznaczone null = "nie dotyczy" — całkowicie pomijane w porównaniu i chipach
+    const activeSourceKeys = IDENTITY_SOURCES.filter(s => sources[s] !== null && sources[s] !== undefined);
+
     const fields = ['nazwa', 'nip', 'adres'];
     const fieldLabels = { nazwa: 'Nazwa / Firma', nip: 'NIP', adres: 'Adres' };
     const fieldIcons  = { nazwa: '🏢', nip: '🔢', adres: '📍' };
 
-    // Dla każdego pola: zbierz wszystkie niepuste wartości
+    // Zbierz wartości tylko z aktywnych źródeł
     const fieldValues = {};
     for (const f of fields) {
       fieldValues[f] = {};
-      for (const src of IDENTITY_SOURCES) {
+      for (const src of activeSourceKeys) {
         const val = sources[src]?.[f];
-        fieldValues[f][src] = (val && val !== '—' && val.trim() !== '') ? val : null;
+        fieldValues[f][src] = (val && val !== '—' && String(val).trim() !== '') ? val : null;
       }
     }
 
     // ── Ustal konsensus dla każdego pola ──
-    function getConsensus(vals) {
+    function getConsensus(vals, isAddr) {
       const nonNull = Object.entries(vals).filter(([,v]) => v !== null);
       if (nonNull.length === 0) return { text: null, status: 'empty', chips: [] };
 
-      const reference = nonNull[0][1];
-      let allMatch = true;
+      // Normalizuj wszystkie wartości i sprawdź czy wszystkie są zgodne
+      const normMap = nonNull.map(([src, v]) => ({ src, v, n: isAddr ? normalizeAddr(v) : normalizeText(v) }));
+
+      // Znajdź wartość która pasuje do największej liczby pozostałych (konsensus)
+      let bestSrc = normMap[0];
+      let bestScore = 0;
+      for (const candidate of normMap) {
+        let score = normMap.filter(x => {
+          const cmp = textsMatch(candidate.v, x.v, isAddr);
+          return cmp === 'exact' || cmp === 'similar' || cmp === 'partial';
+        }).length;
+        if (score > bestScore) { bestScore = score; bestSrc = candidate; }
+      }
+      const reference = bestSrc.v;
+
       let hasDifference = false;
       let hasConflict = false;
 
-      const chips = IDENTITY_SOURCES.map(src => {
+      const chips = activeSourceKeys.map(src => {
         const val = vals[src];
         if (!val) return { src, val: null, status: 'missing' };
-        const cmp = textsMatch(reference, val);
+        const cmp = textsMatch(reference, val, isAddr);
         if (cmp === 'exact') return { src, val, status: 'match' };
-        if (cmp === 'partial' || cmp === 'similar') {
+        if (cmp === 'similar' || cmp === 'partial') {
           hasDifference = true;
           return { src, val, status: 'differs' };
         }
-        // Sprawdź też względem innych niepustych
-        let anyMatch = false;
-        for (const [,v2] of nonNull) {
-          const c2 = textsMatch(val, v2);
-          if (c2 === 'exact' || c2 === 'similar' || c2 === 'partial') { anyMatch = true; break; }
-        }
-        if (!anyMatch) {
-          hasConflict = true;
-          return { src, val, status: 'conflict' };
-        }
+        // Sprawdź czy choć jedno inne źródło zgadza się z tym
+        const anyMatch = nonNull.some(([,v2]) => {
+          if (v2 === val) return false;
+          const c = textsMatch(val, v2, isAddr);
+          return c === 'exact' || c === 'similar' || c === 'partial';
+        });
+        if (!anyMatch) { hasConflict = true; return { src, val, status: 'conflict' }; }
         hasDifference = true;
         return { src, val, status: 'differs' };
       });
-
-      // Konsensus = najczęściej powtarzająca się wartość (po normalizacji)
-      const freq = {};
-      for (const { val } of chips.filter(c => c.val)) {
-        const n = normalizeText(val);
-        freq[n] = (freq[n] || 0) + 1;
-      }
-      const topNorm = Object.entries(freq).sort((a,b) => b[1]-a[1])[0]?.[0];
-      const consensusVal = nonNull.find(([,v]) => normalizeText(v) === topNorm)?.[1] || reference;
 
       let status = 'ok';
       if (hasConflict) status = 'conflict';
       else if (hasDifference) status = 'warn';
 
-      return { text: consensusVal, status, chips };
+      return { text: reference, status, chips };
     }
 
     const consensuses = {};
     let globalStatus = 'ok';
     for (const f of fields) {
-      consensuses[f] = getConsensus(fieldValues[f]);
+      consensuses[f] = getConsensus(fieldValues[f], f === 'adres');
       if (consensuses[f].status === 'conflict') globalStatus = 'conflict';
       else if (consensuses[f].status === 'warn' && globalStatus !== 'conflict') globalStatus = 'warn';
     }
 
-    // Sprawdź czy wszystkie źródła odpowiedziały (czekamy na 4: vies, bl, krs lub ceidg)
+    // Czekamy aż odpowiedzą: vies + bl + (krs lub ceidg) = minimum 3 aktywne
     const responded = available.length;
-    const stillLoading = responded < 3; // przynajmniej 3 źródła muszą odpowiedzieć
+    const stillLoading = responded < 3;
 
     // ── Render ──
     const fieldHtml = fields.map(f => {
       const con = consensuses[f];
       const conClass = con.status === 'conflict' ? 'conflict' : con.status === 'warn' ? 'warn' : con.text ? '' : 'empty';
-      const conIcon = con.status === 'conflict' ? '⚠' : con.status === 'warn' ? '~' : con.text ? '✓' : '';
-      const conText = con.text || 'Brak danych we wszystkich źródłach';
+      const conIcon  = con.status === 'conflict' ? '⚠' : con.status === 'warn' ? '~' : con.text ? '✓' : '';
+      const conText  = con.text || 'Brak danych we wszystkich źródłach';
 
-      const chipsHtml = con.chips
-        .filter(c => c.status !== 'missing' || con.chips.some(x => x.status !== 'missing'))
-        .map(c => {
-          const label = SOURCE_LABELS[c.src];
-          const shortVal = c.val
-            ? (c.val.length > 35 ? c.val.substring(0,33) + '…' : c.val)
-            : '—';
-          const statusCls = c.status;
-          return `<div class="identity-source-chip ${statusCls}" title="${c.val || 'Brak danych'}">
-            <span class="chip-dot"></span>
-            <strong>${label}</strong>
-            <span class="chip-val">${shortVal}</span>
-          </div>`;
-        }).join('');
+      const chipsHtml = con.chips.map(c => {
+        const shortVal = c.val ? (c.val.length > 38 ? c.val.substring(0,36) + '…' : c.val) : '—';
+        return `<div class="identity-source-chip ${c.status}" title="${c.val || 'Brak danych z tego źródła'}">
+          <span class="chip-dot"></span>
+          <strong>${SOURCE_LABELS[c.src]}</strong>
+          <span class="chip-val">${shortVal}</span>
+        </div>`;
+      }).join('');
 
       return `
         <div class="identity-field-block">
           <div class="identity-field-label">${fieldIcons[f]} ${fieldLabels[f]}</div>
           <div class="identity-consensus ${conClass}">
-            ${con.text ? `<span style="opacity:0.5;font-size:11px">${conIcon}</span>` : ''}
+            ${con.text ? `<span style="opacity:0.45;font-size:11px;flex-shrink:0">${conIcon}</span>` : ''}
             ${conText}
           </div>
           <div class="identity-sources">${chipsHtml}</div>
         </div>`;
     }).join(`<div class="identity-divider"></div>`);
 
+    const registryType = activeSourceKeys.includes('krs') ? 'KRS (spółka)' : activeSourceKeys.includes('ceidg') ? 'CEIDG (JDG)' : '';
+    const registryNote = registryType ? ` · Rejestr: ${registryType}` : '';
+
     container.innerHTML = fieldHtml + `
       <div class="identity-note">
         ${stillLoading ? '<div class="identity-mini-spinner"></div> Oczekiwanie na pozostałe źródła…' : ''}
-        <span style="margin-left:auto;opacity:0.5">Porównanie normalizowane (bez wielkości liter, diakrytyków)</span>
+        <span style="margin-left:auto;opacity:0.5">Normalizacja: bez diakrytyków, interpunkcji, wielkości liter${registryNote}</span>
       </div>`;
 
-    // Aktualizuj ogólny status
     if (!stillLoading) {
-      const cls = globalStatus === 'conflict' ? 'has-conflict' : globalStatus === 'warn' ? 'has-warn' : 'all-ok';
+      const cls  = globalStatus === 'conflict' ? 'has-conflict' : globalStatus === 'warn' ? 'has-warn' : 'all-ok';
       const icon = globalStatus === 'conflict' ? '⚠ Rozbieżności danych' : globalStatus === 'warn' ? '~ Drobne różnice' : '✓ Dane spójne';
       overallEl.className = `identity-overall ${cls}`;
       overallEl.innerHTML = icon;
