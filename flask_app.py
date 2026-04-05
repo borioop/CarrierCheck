@@ -115,7 +115,34 @@ def bialalistava():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+# ── Pomocnik: pobierz pełne dane firmy z CEIDG po link/ID ────────────────────
+def _ceidg_fetch_detail(link_or_id, headers):
+    """Pobiera pełne dane firmy z CEIDG. Przyjmuje pełny URL lub sam ID."""
+    url = link_or_id if link_or_id.startswith('http') else f'{CEIDG_BASE}/firma/{link_or_id}'
+    try:
+        r = requests.get(url, headers=headers, timeout=20)
+        print(f"[CEIDG] detail url={url} status={r.status_code}")
+        if r.ok:
+            data = r.json()
+            firma = data.get('firma', [])
+            if isinstance(firma, list):
+                return firma[0] if firma else None
+            return firma
+    except Exception as e:
+        print(f"[CEIDG] detail wyjątek: {e}")
+    return None
+
+
 # ── CEIDG proxy ───────────────────────────────────────────────────────────────
+# NAPRAWKA spółek cywilnych:
+#  - NIP podany może być NIPem SPÓŁKI CYWILNEJ (nip_sc), nie właściciela.
+#    Endpoint /firma akceptuje tylko NIP właściciela. Dlatego:
+#    1. Szukamy po nip (właściciel) przez /firma
+#    2. Szukamy po nip (właściciel) przez /firmy
+#    3. Szukamy po nip_sc (spółka cywilna) przez /firmy — TO JEST KLUCZOWA POPRAWKA
+#    Wyniki z kroku 3 są oznaczane flagą is_spolka_cywilna=True.
+#
 # Token JWT nigdy nie trafia do przeglądarki — jest dodawany tu, po stronie serwera.
 @app.route('/ceidg')
 def ceidg():
@@ -129,24 +156,22 @@ def ceidg():
     }
 
     try:
-        # Próba 1: endpoint /firma (singiel, pełne dane) — nip jako string
+        # ── Krok 1: /firma?nip=... (NIP właściciela, pełne dane) ─────────────
         resp = requests.get(f'{CEIDG_BASE}/firma', params={'nip': nip}, headers=headers, timeout=20)
         print(f"[CEIDG] /firma NIP={nip} status={resp.status_code} body={resp.text[:300]}")
 
-        if resp.status_code == 204:
-            # 204 = brak wyników — nie zwracamy od razu, próbujemy /firmy
-            pass
-        elif resp.ok:
+        if resp.ok:
             data  = resp.json()
             firma = data.get('firma', [])
             if isinstance(firma, list):
                 firma = firma[0] if firma else None
             if firma:
-                return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firma})
-            # pusta lista firma[] — przechodzimy do /firmy
+                return jsonify({
+                    'success': True, 'found': True, 'nip': nip,
+                    'firma': firma, 'is_spolka_cywilna': False
+                })
 
-        # Próba 2: endpoint /firmy (lista) — nip jako tablica zgodnie ze specyfikacją API
-        # API wymaga wielokrotnego parametru: ?nip=X (requests obsługuje listę krotek)
+        # ── Krok 2: /firmy?nip=... (NIP właściciela, lista) ──────────────────
         resp2 = requests.get(
             f'{CEIDG_BASE}/firmy',
             params=[('nip', nip), ('limit', 1)],
@@ -155,33 +180,82 @@ def ceidg():
         )
         print(f"[CEIDG] /firmy NIP={nip} status={resp2.status_code} body={resp2.text[:300]}")
 
-        if resp2.status_code == 204:
+        if resp2.ok:
+            data2 = resp2.json()
+            firmy = data2.get('firmy', [])
+            if firmy:
+                link = firmy[0].get('link')
+                firma_detail = _ceidg_fetch_detail(link, headers) if link else None
+                return jsonify({
+                    'success': True, 'found': True, 'nip': nip,
+                    'firma': firma_detail or firmy[0],
+                    'partial': firma_detail is None,
+                    'is_spolka_cywilna': False
+                })
+
+        # ── Krok 3: /firmy?nip_sc=... (NIP SPÓŁKI CYWILNEJ) ─────────────────
+        # Spółki cywilne posiadają odrębny NIP spółki (nip_sc), różny od NIP
+        # wspólników. Endpoint /firma nie obsługuje nip_sc — trzeba użyć /firmy.
+        resp3 = requests.get(
+            f'{CEIDG_BASE}/firmy',
+            params=[('nip_sc', nip), ('limit', 5)],
+            headers=headers,
+            timeout=20
+        )
+        print(f"[CEIDG] /firmy nip_sc={nip} status={resp3.status_code} body={resp3.text[:300]}")
+
+        if resp3.status_code == 204:
             return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
 
-        if not resp2.ok:
-            return jsonify({'success': False, 'error': f'HTTP {resp2.status_code}', 'nip': nip}), 502
+        if resp3.ok:
+            data3 = resp3.json()
+            firmy3 = data3.get('firmy', [])
 
-        data2 = resp2.json()
-        firmy = data2.get('firmy', [])
+            if not firmy3:
+                return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
 
-        if not firmy:
-            return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
+            # Pobierz pełne dane pierwszego wspólnika (każdy wspólnik ma wpis w CEIDG)
+            link3 = firmy3[0].get('link')
+            firma3_detail = _ceidg_fetch_detail(link3, headers) if link3 else None
 
-        # Pobierz pełne szczegóły przez link z odpowiedzi listy
-        link = firmy[0].get('link')
-        if link:
-            resp3 = requests.get(link, headers=headers, timeout=20)
-            print(f"[CEIDG] detail link={link} status={resp3.status_code}")
-            if resp3.ok:
-                data3 = resp3.json()
-                firma3 = data3.get('firma', [])
-                if isinstance(firma3, list):
-                    firma3 = firma3[0] if firma3 else None
-                if firma3:
-                    return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firma3})
+            # Zbierz dane wszystkich wspólników (linki do ich wpisów)
+            wspolnicy = []
+            for f in firmy3:
+                wspolnicy.append({
+                    'imie': f.get('wlasciciel', {}).get('imie', ''),
+                    'nazwisko': f.get('wlasciciel', {}).get('nazwisko', ''),
+                    'nip_wspolnika': f.get('wlasciciel', {}).get('nip', ''),
+                    'regon_wspolnika': f.get('wlasciciel', {}).get('regon', ''),
+                    'status': f.get('status', ''),
+                    'link': f.get('link', ''),
+                })
 
-        # Fallback: dane z listy (mniej szczegółowe, ale coś zwracamy)
-        return jsonify({'success': True, 'found': True, 'nip': nip, 'firma': firmy[0], 'partial': True})
+            # Wyciągnij dane spółki z pola spolki[] pierwszego wpisu
+            spolka_info = None
+            if firma3_detail:
+                spolki_list = firma3_detail.get('spolki', [])
+                for s in spolki_list:
+                    if s.get('nip') == nip or s.get('regon'):
+                        spolka_info = s
+                        break
+                if not spolka_info and spolki_list:
+                    spolka_info = spolki_list[0]
+
+            return jsonify({
+                'success': True,
+                'found': True,
+                'nip': nip,
+                'firma': firma3_detail or firmy3[0],
+                'partial': firma3_detail is None,
+                'is_spolka_cywilna': True,
+                'nip_sc': nip,
+                'wspolnicy': wspolnicy,
+                'spolka_info': spolka_info,
+                'count_wspolnikow': data3.get('count', len(firmy3)),
+            })
+
+        # Żadna z prób nie dała wyniku
+        return jsonify({'success': True, 'found': False, 'nip': nip, 'firma': None})
 
     except requests.exceptions.Timeout:
         return jsonify({'success': False, 'error': 'Przekroczono czas oczekiwania (API CEIDG niedostępne)'}), 504
@@ -191,7 +265,14 @@ def ceidg():
         print(f"[CEIDG] wyjątek: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 # ── KRS proxy ─────────────────────────────────────────────────────────────────
+# NAPRAWKA spółek cywilnych:
+#  - Spółki cywilne NIE są rejestrowane w KRS (rejestr spółek prawa handlowego).
+#    Jeśli CEIDG zwróciło is_spolka_cywilna=True, frontend może pominąć KRS.
+#    Jednak dla bezpieczeństwa: jeśli klient odpyta /krs z NIPem s.c.,
+#    zwracamy czytelną informację zamiast fałszywego "nie znaleziono".
+#
 # Otwarte API KRS nie wymaga tokenu – proxy potrzebne wyłącznie z powodu CORS.
 @app.route('/krs')
 def krs():
@@ -207,7 +288,7 @@ def krs():
     try:
         krs_number = None
 
-        # Krok 1: próba wyszukania po NIP przez podmiotySzukaj
+        # ── Krok 1: próba wyszukania po NIP przez podmiotySzukaj ─────────────
         try:
             alt_resp = requests.get(
                 'https://api-krs.ms.gov.pl/api/krs/podmiotySzukaj',
@@ -227,7 +308,7 @@ def krs():
         except Exception as e:
             print(f"[KRS] podmiotySzukaj wyjątek: {e}")
 
-        # Krok 2: fallback – pobierz numer KRS z Białej Listy VAT (pole 'krs')
+        # ── Krok 2: fallback – pobierz numer KRS z Białej Listy VAT ──────────
         if not krs_number:
             try:
                 bl_resp = requests.get(
@@ -243,15 +324,56 @@ def krs():
             except Exception as e:
                 print(f"[KRS] BL wyjątek: {e}")
 
+        # ── Krok 3: sprawdź w CEIDG czy NIP należy do spółki cywilnej ────────
+        # Spółka cywilna NIE ma wpisu w KRS — zwróć informację zamiast błędu.
         if not krs_number:
+            ceidg_headers = {
+                'Authorization': f'Bearer {CEIDG_TOKEN}',
+                'Accept': 'application/json',
+            }
+            is_sc = False
+            try:
+                sc_resp = requests.get(
+                    f'{CEIDG_BASE}/firmy',
+                    params=[('nip_sc', nip), ('limit', 1)],
+                    headers=ceidg_headers,
+                    timeout=15
+                )
+                print(f"[KRS] CEIDG nip_sc check NIP={nip} status={sc_resp.status_code}")
+                if sc_resp.ok:
+                    sc_data = sc_resp.json()
+                    if sc_data.get('firmy') or sc_data.get('count', 0) > 0:
+                        is_sc = True
+            except Exception as e:
+                print(f"[KRS] CEIDG nip_sc check wyjątek: {e}")
+
+            if is_sc:
+                return jsonify({
+                    'success': True,
+                    'found': False,
+                    'nip': nip,
+                    'is_spolka_cywilna': True,
+                    'info': (
+                        'Podany NIP należy do spółki cywilnej (s.c.). '
+                        'Spółki cywilne nie są rejestrowane w KRS — '
+                        'są wpisywane do CEIDG przez każdego wspólnika osobno. '
+                        'Dane spółki dostępne są w sekcji CEIDG.'
+                    )
+                })
+
             return jsonify({
                 'success': True,
                 'found': False,
                 'nip': nip,
-                'info': 'Nie znaleziono numeru KRS dla podanego NIP. Podmiot może być wpisany do CEIDG (jednoosobowa działalność).'
+                'is_spolka_cywilna': False,
+                'info': (
+                    'Nie znaleziono numeru KRS dla podanego NIP. '
+                    'Podmiot może być wpisany do CEIDG (jednoosobowa działalność gospodarcza) '
+                    'lub jest to spółka cywilna nieposiadająca wpisu w KRS.'
+                )
             })
 
-        # Krok 3: pobierz odpis aktualny po numerze KRS
+        # ── Krok 4: pobierz odpis aktualny po numerze KRS ────────────────────
         krs_padded = str(krs_number).zfill(10)
         for rejestr in ['P', 'S']:
             try:
@@ -272,6 +394,7 @@ def krs():
                     'nip': nip,
                     'krs': krs_padded,
                     'rejestr': rejestr,
+                    'is_spolka_cywilna': False,
                     'odpis': odpis_resp.json()
                 })
             except Exception as e:
@@ -283,6 +406,7 @@ def krs():
             'found': True,
             'nip': nip,
             'krs': krs_padded,
+            'is_spolka_cywilna': False,
             'info': 'Numer KRS znaleziony, ale nie udało się pobrać odpisu z API.'
         })
 
@@ -293,6 +417,7 @@ def krs():
     except Exception as e:
         print(f"[KRS] wyjątek globalny: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 # ── CRBR proxy ────────────────────────────────────────────────────────────────
 # Centralny Rejestr Beneficjentów Rzeczywistych (Ministerstwo Finansów)
@@ -322,7 +447,6 @@ def _crbr_soap_body(nip: str) -> str:
 def _xml_text(el, tag):
     """Bezpieczne pobranie tekstu z elementu XML — obsługuje wielokrotne namespace-prefixy."""
     import xml.etree.ElementTree as ET
-    # Szukaj po lokalnej nazwie tagu (ignoruj namespace)
     for child in el.iter():
         local = child.tag.split('}')[-1] if '}' in child.tag else child.tag
         if local == tag:
@@ -342,7 +466,6 @@ def _parse_beneficjent(b_el):
     """Parsuje element BeneficjentRzeczywisty do słownika."""
     def t(tag): return _xml_text(b_el, tag)
 
-    # Grupowy beneficjent (Trust)
     nazwa_grupowego = t('NazwaBeneficjentaGrupowego')
     if nazwa_grupowego:
         return {
@@ -351,7 +474,6 @@ def _parse_beneficjent(b_el):
             'uprawnienia': t('InformacjeOUprawnieniachPrzyslugujacychBeneficjentowiGrupowemuTrust'),
         }
 
-    # Osoba fizyczna
     benef = {
         'typ': 'fizyczny',
         'imie': t('PierwszeImie'),
@@ -414,17 +536,14 @@ def crbr():
         if not resp.ok:
             return jsonify({'success': False, 'error': f'HTTP {resp.status_code} z bramki CRBR'}), 502
 
-        # Parsuj XML
         root = ET.fromstring(resp.content)
 
-        # Sprawdź Status
         status = _xml_text(root, 'Status')
         if status == 'BrakInformacji':
             return jsonify({'success': True, 'found': False, 'nip': nip, 'status': status})
         if status == 'BladFormalny':
             return jsonify({'success': False, 'error': 'BladFormalny — niepoprawna konstrukcja zapytania', 'nip': nip}), 400
 
-        # Parsuj listę spółek
         spolki = []
         for spolka_el in _xml_findall(root, 'SpolkaIBeneficjenci'):
             def t(tag): return _xml_text(spolka_el, tag)
@@ -449,15 +568,12 @@ def crbr():
                 'rozbieznosci': [],
             }
 
-            # Beneficjenci
             for b_el in _xml_findall(spolka_el, 'BeneficjentRzeczywisty'):
                 spolka['beneficjenci'].append(_parse_beneficjent(b_el))
 
-            # Reprezentanci
             for r_el in _xml_findall(spolka_el, 'Reprezentant'):
                 spolka['reprezentanci'].append(_parse_reprezentant(r_el))
 
-            # Rozbieżności
             for rb_el in _xml_findall(spolka_el, 'InformacjaORozbieznosciach'):
                 spolka['rozbieznosci'].append(_xml_text(rb_el, 'InformacjaDlaZainteresowanego'))
 
@@ -481,3 +597,7 @@ def crbr():
     except Exception as e:
         print(f"[CRBR] wyjątek globalny: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
